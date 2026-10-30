@@ -39,3 +39,4 @@
 
 - Om, correcciónes de DB y volver a migrar y seeders.
 - Om, escritura de la descripción de la DB.
+- Om, creación de los modelos para Eloquent.
