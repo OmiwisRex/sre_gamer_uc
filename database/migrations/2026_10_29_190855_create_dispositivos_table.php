@@ -14,6 +14,8 @@ return new class extends Migration
         Schema::create('dispositivos', function (Blueprint $table) {
             $table->id();
             $table->string('nombre', 24)->unique();
+            $table->string('direccion', 128)->default('');
+            $table->string('password', 255)->default('');
             $table->foreignId('tipo_dispo_id')->constrained('tipo_dispos')->restrictOnDelete();
             $table->foreignId('estado_id')->constrained('estados')->restrictOnDelete();
             $table->string('descripcion', 256);

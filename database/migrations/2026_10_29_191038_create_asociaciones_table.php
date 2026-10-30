@@ -14,7 +14,8 @@ return new class extends Migration
         Schema::create('asociaciones', function (Blueprint $table) {
             $table->id();
             $table->foreignId('usuario_id')->constrained('usuarios')->restrictOnDelete();
-            $table->foreignId('dispositivo_id')->constrained('dispositivos')->restrictOnDelete();
+            $table->foreignId('dispositivo_id')->nullable()->default(null)->
+                constrained('dispositivos')->restrictOnDelete();
             $table->foreignId('evento_id')->nullable()->default(null)->
                 constrained('eventos')->restrictOnDelete();
             $table->foreignId('reserva_id')->nullable()->default(null)->

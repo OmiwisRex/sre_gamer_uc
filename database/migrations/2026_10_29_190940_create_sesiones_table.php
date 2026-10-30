@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('sesiones', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('usuario_id')->constrained('usuarios')->restrictOnDelete();
+            $table->foreignId('usuario_id')->unique()->
+                constrained('usuarios')->restrictOnDelete();
             $table->string('email', 128)->unique();
             $table->string('password', 255)->default('');
             $table->timestamps();
