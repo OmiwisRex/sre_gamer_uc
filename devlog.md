@@ -40,3 +40,8 @@
 - Om, correcciónes de DB y volver a migrar y seeders.
 - Om, escritura de la descripción de la DB.
 - Om, creación de los modelos para Eloquent.
+- Om, escritura de frontend en README.
+
+03/11/2026 Ma:
+
+- Om, 

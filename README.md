@@ -2,47 +2,47 @@
 
 ## Frontend
 
-### Vista Portada Login
+### Vista Portada Login (views/sesion/*)
 
 Incluye login, registro, recuperación de contraseña y similares, es lo que se ve cuando no se ha identificado el usuario.
 
-### Vista Configuración
+### Vista Configuración (views/configuracion/*)
 
 Permite al usuario logeado cambiar algunos de sus datos, cambiar contraseña y en general administrar la App.
 
-### Vista Reservación
+### Vista Reservaciones (views/reservaciones/*)
 
 Es la única que ve un usuario no administrador, desde allí puede ver horarios de la sala, alertas y ver, hacer o eliminar su propia reserva.
 
-### Vista Menú Principal
+### Vista Menú Principal (views/index.blade)
 
-Es la página de bienvenida, es también la estructura base donde todas las demás vistas post login yacen, por eso tiene pestañas o botónes para cambiar de sub-vista.
+Es la página de bienvenida, es también la estructura base donde todas las demás vistas post login, por eso tiene pestañas laterales para cambiar de sub-vista, en general `views/layout.blade` es quien maneja la estructura base con estas pestañas laterales para todas las vistas, además del header con el logo de la institución.
 
-### Vista Administra Sala
+### Vista Administra Sala (views/adminsala/*)
 
 Contiene todo lo necesario para la mayoría de acciónes administrativas, ahí se ven las alertas, datos del juegador seleccionado, donde puede ver o crear asociaciónes o reservas, puede ver también las horas que ha jugado en el día, además, muestra la línea de tiempo vs dispositivos según su uso.
 
-### Vista CRUD Usuarios
+### Vista CRUD Usuarios (views/usuarios/*)
 
 Permite crear un nuevo usuario, editarlo y ver la lista de usuarios filtrados.
 
-### Vista CRUD Dispositivos
+### Vista CRUD Dispositivos (views/dispositivos/*)
 
 Para crear dispositivos, actualizarlos y eliminarlos, también permite cambiar el estado de los mismos, por ejemplo para indicar que un dispositivo está en mantenimiento.
 
-### Vista CRUD Eventos
+### Vista CRUD Eventos (views/eventos/*)
 
 Permite crear, actualiza o eliminar eventos, muestra también la línea de tiempo para poder acomodarlos.
 
-### Vista Observaciónes
+### Vista Observaciónes (views/observaciones/*)
 
 Allí se crean observaciónes con o sin asociación vinculada, además permite ver según filtro, otras observaciónes hechas.
 
-### Vista Estadísticas
+### Vista Estadísticas (views/estadisticas/*)
 
 Para observar datos generales de uso de la sala gamer, permite ver gráficos filtrados y también extraer los datos para ser procesados por otro software, por ejemplo Excel.
 
-### Vista Auditorías
+### Vista Auditorías (views/auditorias/*)
 
 Muestra según filtro, las acciónes administrativas hechas.
 
@@ -88,8 +88,8 @@ De manera automática se llena `auditorías`.
 7. `php artisan migrate:fresh` destruye las tablas y las re-crea.
 8. `php artisan db:seed` llena los datos iniciales.
 9. `npm ci` o `npm install` dependiendo si existe package-lock.json o si no.
-10. `npm run build` para compilar el frontend.
-11. `php artisan serve` ejecutar el servidor.
+10. `npm run build` o `npm run dev` para compilar o ejecutar continuamente el frontend.
+11. `php artisan serve` ejecutar el servidor (si usó npm run dev tendrá que abrir otra terminal).
 12. `php artisan optimize:clear` opcional, si hay problemas de caché.
 
 ## Desarrollador

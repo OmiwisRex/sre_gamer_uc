@@ -7,3 +7,47 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+@font-face {
+    font-family: 'Myriad Pro';
+    src: url('./fuentes/MYRIADPRO-REGULAR.OTF') format('otf');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap; /* Mejora la velocidad de carga visual */
+}
+
+@font-face {
+    font-family: 'Myriad Pro';
+    src: url('./fuentes/MYRIADPRO-BOLDCOND.OTF') format('otf');
+    font-weight: bold;
+    font-style: normal;
+    font-display: swap;
+}
+
+:root {
+    /* --- BLOQUE DE AZULES (Colores de identidad principal) --- */
+    --azul-oscuro: #182530;
+    --azul-medio:  #0f3b53;
+    --azul-claro:  #1b5da4;
+
+    /* --- BLOQUE AQUA (Colores de acento modernos) --- */
+    --aqua-uno:    #15aebf;
+    --aqua-dos:    #00a99d;
+
+    /* --- BLOQUE DE GRISES (Fondos, tarjetas y textos) --- */
+    --gris-oscuro: #333333;
+    --gris-claro:  #777777;
+    --gris-blanco: rgb(200, 200, 200);
+
+    /* --- BLOQUE DE BLANCO (Textos y elementos de contraste) --- */
+    --blanco: #ffffff;
+
+    /* --- Bloque de NEGRO (Textos y elementos de contraste) --- */
+    --negro: #000000;
+    --negro-medio:#202020;
+
+    /* --- BLOQUE DE AMARILLOS (Alertas, estados o detalles) --- */
+    --amarillo-oscuro: #b08f09;
+    --amarillo-medio:  #db9421;
+    --amarillo-claro:  #f7c221;
+}
