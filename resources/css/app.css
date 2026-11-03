@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import './estilos.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
@@ -8,9 +9,29 @@
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
+@theme inline {
+    --font-institucional: 'Myriad Pro', ui-sans-serif, system-ui, sans-serif;
+    --color-azul-oscuro: var(--azul-oscuro);
+    --color-azul-medio: var(--azul-medio);
+    --color-azul-claro: var(--azul-claro);
+    --color-aqua-uno: var(--aqua-uno);
+    --color-aqua-dos: var(--aqua-dos);
+    --color-gris-oscuro: var(--gris-oscuro);
+    --color-gris-claro: var(--gris-claro);
+    --color-gris-blanco: var(--gris-blanco);
+    --color-blanco: var(--blanco);
+    --color-negro: var(--negro);
+    --color-negro-medio: var(--negro-medio);
+    --color-amarillo-oscuro: var(--amarillo-oscuro);
+    --color-amarillo-medio: var(--amarillo-medio);
+    --color-amarillo-claro: var(--amarillo-claro);
+}
+
+@source '../views/**/*.blade.php';
+
 @font-face {
     font-family: 'Myriad Pro';
-    src: url('./fuentes/MYRIADPRO-REGULAR.OTF') format('otf');
+    src: url('./fuentes/MYRIADPRO-REGULAR.OTF') format('opentype');
     font-weight: normal;
     font-style: normal;
     font-display: swap; /* Mejora la velocidad de carga visual */
@@ -18,7 +39,7 @@
 
 @font-face {
     font-family: 'Myriad Pro';
-    src: url('./fuentes/MYRIADPRO-BOLDCOND.OTF') format('otf');
+    src: url('./fuentes/MYRIADPRO-BOLDCOND.OTF') format('opentype');
     font-weight: bold;
     font-style: normal;
     font-display: swap;

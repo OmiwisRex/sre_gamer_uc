@@ -1,4 +1,4 @@
-# Devlog para SRE Gamer UC
+# Devlog para SGUC (Sala Gamer Universidad Católica)
 
 ## Desarrolladores
 
@@ -44,4 +44,7 @@
 
 03/11/2026 Ma:
 
-- Om, 
+- Om, instalación de Bootstrap, npm, Tailwind.
+- Om, importación de logo, foto, tipografía, colorimetría.
+- Om, estructuración de las carpetas de vistas.
+- Om, creación de layout e index usando prompt para IA.

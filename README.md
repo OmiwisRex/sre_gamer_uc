@@ -1,6 +1,10 @@
-# SRE Gamer UC
+# SGUC (Sala Gamer Universidad Católica)
 
 ## Frontend
+
+La App es para uso en escritorio, excepto por el apartado se sesión y reservaciónes, que serán los únicos responsivos para escritorio y móvil.
+
+En `app.css` estarán las importaciónes, tipografía y colorimetría, luego en `estilos.css` irán todas las clases CSS para el HTML de toda la App.
 
 ### Vista Portada Login (views/sesion/*)
 
