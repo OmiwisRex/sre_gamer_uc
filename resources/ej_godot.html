@@ -1,0 +1,576 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sala Gamer Unicatólica</title>
+
+<style>
+:root {
+    --fondo: #514e4b;
+    --panel: #263936;
+    --panel-sec: #302f21;
+    --panel-alerta: #382724;
+    --texto: #eeeeee;
+    --secundario: #a0a4a3;
+    --acento: #ffff70;
+    --control: #b99479;
+    --borde: #44423d;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 20px;
+    background: var(--fondo);
+    color: var(--texto);
+    font-family: Arial, sans-serif;
+}
+
+button, input, select, textarea {
+    font: inherit;
+}
+
+button, select, input, textarea {
+    border: none;
+    border-radius: 7px;
+    padding: 9px;
+}
+
+button, select {
+    background: var(--control);
+    cursor: pointer;
+}
+
+input, textarea {
+    background: var(--secundario);
+    color: #222;
+    min-width: 0;
+}
+
+h2 {
+    color: var(--acento);
+    font-size: 18px;
+    font-weight: normal;
+    margin: 0 0 12px;
+}
+
+small {
+    font-size: 12px;
+}
+
+/* GRID PRINCIPAL */
+
+.dashboard {
+    display: grid;
+    grid-template-columns: 2.1fr 1fr 1.35fr;
+    grid-template-rows: minmax(490px, 1.35fr) minmax(280px, 1fr);
+    gap: 12px;
+    max-width: 1600px;
+    margin: auto;
+}
+
+/* PANELES */
+
+.panel {
+    background: var(--panel);
+    border-radius: 7px;
+    padding: 12px;
+    min-width: 0;
+    min-height: 0;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* COLUMNA IZQUIERDA */
+
+.izquierda {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+}
+
+/* JUGADOR */
+
+.jugador {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.jugador-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.jugador-header h2 {
+    margin: 0;
+}
+
+.jugador-datos {
+    display: grid;
+    grid-template-columns: 90px 1fr auto;
+    gap: 10px;
+    align-items: center;
+}
+
+.jugador-datos .nombre {
+    grid-column: 2 / 4;
+}
+
+.etiqueta {
+    color: var(--secundario);
+    text-align: right;
+}
+
+/* FORMULARIOS */
+
+.operaciones {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    flex: 1;
+    min-height: 0;
+}
+
+.formulario {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.campo {
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    gap: 8px;
+    align-items: center;
+}
+
+.campo label {
+    color: var(--secundario);
+    text-align: right;
+}
+
+.formulario textarea {
+    flex: 1;
+    min-height: 80px;
+    resize: none;
+}
+
+.formulario button {
+    padding: 12px;
+    margin-top: auto;
+}
+
+/* HORAS */
+
+.horas {
+    display: flex;
+    flex-direction: column;
+}
+
+.horas-tabla {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.fila-hora {
+    display: grid;
+    grid-template-columns: 1fr 1fr 0.7fr;
+    gap: 8px;
+    padding: 5px 0;
+    color: var(--secundario);
+}
+
+.fila-hora.cabecera {
+    color: var(--acento);
+    font-size: 17px;
+}
+
+.total {
+    text-align: center;
+    padding: 10px;
+}
+
+/* ALERTAS */
+
+.alertas {
+    display: flex;
+    flex-direction: column;
+    background: var(--panel-alerta);
+}
+
+.alertas-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    overflow-y: auto;
+}
+
+.alerta {
+    background: var(--control);
+    color: #171717;
+    border-radius: 6px;
+    padding: 7px;
+}
+
+.alerta.tiempo {
+    background: #85876d;
+}
+
+/* LINEA DE TIEMPO */
+
+.timeline {
+    background: var(--panel-sec);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.timeline-scroll {
+    overflow: auto;
+    flex: 1;
+}
+
+.timeline-grid {
+    display: grid;
+    grid-template-columns: 105px repeat(19, minmax(38px, 1fr));
+    min-width: 850px;
+    gap: 3px;
+}
+
+.timeline-cell {
+    min-height: 27px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #28271d;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.timeline-cell.hora {
+    color: var(--acento);
+    background: transparent;
+    font-size: 16px;
+}
+
+.timeline-cell.dispositivo {
+    justify-content: flex-start;
+    background: transparent;
+    color: var(--secundario);
+    font-size: 16px;
+}
+
+.timeline-cell.separador {
+    border-left: 3px solid #161610;
+    border-radius: 0;
+}
+
+/* SELECCIÓN */
+
+.seleccion {
+    background: var(--panel-sec);
+    display: flex;
+    flex-direction: column;
+}
+
+.seleccion-lista {
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.seleccion-item {
+    background: var(--control);
+    color: #171717;
+    padding: 9px;
+    border-radius: 6px;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 1050px) {
+    .dashboard {
+        grid-template-columns: 1.5fr 1fr;
+        grid-template-rows: auto;
+    }
+
+    .izquierda {
+        grid-column: 1;
+    }
+
+    .horas {
+        grid-column: 2;
+    }
+
+    .alertas {
+        grid-column: 1;
+    }
+
+    .timeline {
+        grid-column: 1 / 3;
+        min-height: 300px;
+    }
+
+    .seleccion {
+        grid-column: 2;
+    }
+}
+
+@media (max-width: 650px) {
+    body {
+        padding: 10px;
+    }
+
+    .dashboard {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .operaciones {
+        grid-template-columns: 1fr;
+    }
+
+    .jugador-datos {
+        grid-template-columns: 65px 1fr;
+    }
+
+    .jugador-datos .nombre {
+        grid-column: 2;
+    }
+
+    .timeline {
+        min-height: 300px;
+    }
+
+    .horas, .alertas, .seleccion {
+        min-height: 250px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<main class="dashboard">
+
+    <!-- IZQUIERDA: JUGADOR Y OPERACIONES -->
+    <section class="izquierda">
+
+        <article class="panel jugador">
+
+            <header class="jugador-header">
+                <button>Nuevo</button>
+                <h2>JUGADOR</h2>
+                <small>(activo)</small>
+            </header>
+
+            <div class="jugador-datos">
+                <label class="etiqueta">ID</label>
+                <input type="text" placeholder="Cédula o ID de Estudiante">
+                <button>Verificar</button>
+
+                <label class="etiqueta">Nombre</label>
+                <span class="nombre">Nombre y apellidos</span>
+            </div>
+
+        </article>
+
+        <div class="operaciones">
+
+            <!-- RESERVAR -->
+            <article class="panel formulario">
+
+                <h2>RESERVAR</h2>
+
+                <div class="campo">
+                    <label>Tipo</label>
+                    <select>
+                        <option>PC</option>
+                    </select>
+                </div>
+
+                <div class="campo">
+                    <label>Evento</label>
+                    <select>
+                        <option>N/A</option>
+                    </select>
+                </div>
+
+                <div class="campo">
+                    <label>Fecha</label>
+                    <input type="date">
+                </div>
+
+                <div class="campo">
+                    <label>Hora</label>
+                    <input type="time">
+                </div>
+
+                <div class="campo">
+                    <label>Minutos</label>
+                    <input type="number" value="30">
+                </div>
+
+                <button>Hacer Reservación</button>
+
+            </article>
+
+            <!-- ASOCIAR -->
+            <article class="panel formulario">
+
+                <header class="panel-header">
+                    <h2>ASOCIAR</h2>
+                    <small>(reserva)</small>
+                </header>
+
+                <div class="campo">
+                    <label>Dispo</label>
+                    <select>
+                        <option>PC 1</option>
+                    </select>
+                </div>
+
+                <div class="campo">
+                    <label>Evento</label>
+                    <select>
+                        <option>N/A</option>
+                    </select>
+                </div>
+
+                <textarea placeholder="Observación"></textarea>
+
+                <button>Hacer Asociación</button>
+
+            </article>
+
+        </div>
+    </section>
+
+    <!-- CENTRO: HORAS -->
+    <section class="panel horas">
+
+        <h2>HORAS</h2>
+
+        <div class="horas-tabla">
+
+            <div class="fila-hora cabecera">
+                <span>Inicio</span>
+                <span>Dispo</span>
+                <span>Horas</span>
+            </div>
+
+            <!-- Registros dinámicos -->
+            <div id="horas-registros"></div>
+
+        </div>
+
+        <div class="total">
+            TOTAL: 0 h
+        </div>
+
+    </section>
+
+    <!-- DERECHA: ALERTAS -->
+    <section class="panel alertas">
+
+        <h2>ALERTAS</h2>
+
+        <div class="alertas-lista" id="alertas-lista">
+            <!-- Alertas dinámicas -->
+        </div>
+
+    </section>
+
+    <!-- INFERIOR: LINEA DE TIEMPO -->
+    <section class="panel timeline">
+
+        <div class="timeline-scroll">
+            <div class="timeline-grid" id="timeline-grid">
+
+                <!-- Cabecera y filas generadas por JS -->
+
+            </div>
+        </div>
+
+    </section>
+
+    <!-- INFERIOR: SELECCIÓN -->
+    <section class="panel seleccion">
+
+        <h2>SELECCIÓN</h2>
+
+        <div class="seleccion-lista" id="seleccion-lista">
+            <!-- Reservas y asociaciones seleccionadas -->
+        </div>
+
+    </section>
+
+</main>
+
+<script>
+// Configuración visual de la línea de tiempo.
+// No contiene reservas ni asociaciones de ejemplo.
+
+const dispositivos = [
+    "PC 1",
+    "PC 2",
+    "PC 3",
+    "PC 4",
+    "Play 1",
+    "Play 2",
+    "TV Wii"
+];
+
+const horas = [
+    "06", "07", "08", "09", "10", "11", "12",
+    "01", "02", "03", "04", "05", "06", "07",
+    "08", "09", "10", "11", "12"
+];
+
+const timeline = document.getElementById("timeline-grid");
+
+// Cabecera de horas
+timeline.appendChild(crearCelda("Dispositivos", "dispositivo"));
+
+horas.forEach((hora, index) => {
+    const clase = index === 7 ? "hora separador" : "hora";
+    timeline.appendChild(crearCelda(hora, clase));
+});
+
+// Filas vacías por dispositivo
+dispositivos.forEach(dispositivo => {
+
+    timeline.appendChild(
+        crearCelda(dispositivo, "dispositivo")
+    );
+
+    horas.forEach((hora, index) => {
+        const clase = index === 7 ? "separador" : "";
+        timeline.appendChild(crearCelda("", clase));
+    });
+
+});
+
+function crearCelda(texto, clase = "") {
+    const celda = document.createElement("div");
+    celda.className = `timeline-cell ${clase}`;
+    celda.textContent = texto;
+    return celda;
+}
+</script>
+
+</body>
+</html>

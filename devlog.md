@@ -48,3 +48,5 @@
 - Om, importación de logo, foto, tipografía, colorimetría.
 - Om, estructuración de las carpetas de vistas.
 - Om, creación de layout e index usando prompt para IA.
+- Om, descripción detallada del frontend en README (aún falta).
+- Om, ejemplo Godot a HTML con IA.
