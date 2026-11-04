@@ -19,6 +19,7 @@ return new class extends Migration
             $table->timestamp('inicio')->useCurrent();
             $table->integer('duracion_horas');
             $table->integer('aforo');
+            $table->foreignId('estado_id')->constrained('estados')->restrictOnDelete();
             $table->boolean('auto_admin')->default(true);
             $table->timestamps();
         });

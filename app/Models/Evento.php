@@ -16,6 +16,7 @@ class Evento extends Model
         'inicio',
         'duracion_horas',
         'aforo',
+        'estado_id',
         'auto_admin',
     ];
 

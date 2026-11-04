@@ -50,3 +50,7 @@
 - Om, creación de layout e index usando prompt para IA.
 - Om, descripción detallada del frontend en README (aún falta).
 - Om, ejemplo Godot a HTML con IA.
+
+04/11/2026 Mi:
+
+- Om, terminada la descripción detallada del frontend, listo para la IA.

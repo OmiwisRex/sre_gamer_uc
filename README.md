@@ -57,12 +57,13 @@ cuando se trata de cursores, es porque se cargarán los datos bajo demanda, ento
 
 ### Observaciónes
 
-1. buscar lista de observaciónes, usando cursor y filtrando por usuario administrador o usuario asociado a asociaciones, ordenando por fecha de registro.
+1. buscar lista de observaciónes, usando cursor y filtrando por usuario administrador, usuario asociado a asociaciones, evento asociado a asociaciónes o dispositivo asociado a asociaciónes, ordenando por fecha de registro, esto devuelve la fecha de registro, el id y el mensaje.
 2. crear una observación, ya sea sin asociación o ligada a una asociacion, el frontend permitirá escoger alguna de las recientemente activas.
+3. buscar toda la información de una observación específica (nombre y apellidos del admin que la hizo, nombre y apellidos del usuario asociado, evento asociado y dispositivo asociado si los hay, y el mensaje con fecha de registro).
 
 ### Estadísticas
 
-(próximamente...)
+(próximamente...).
 
 ### Auditorías
 
@@ -121,121 +122,55 @@ B2. **Selección**: con un título "Selección" y una lista vertical con scroll,
 
 C. **Alertas**: tiene un título "Alertas" y luego un listado con scroll, donde se van colocando las fichas de alerta, cada ficha es pulsable y cuenta con 3 partes: tiempo en minutos para ordenar listado de alertas, nombe del dispositivo si lo hay, nombre del jugador truncado por si es muy largo. También la ficha tendrá un color indicando el tipo de alerta, si es asociación que ha pasado mucho tiempo abierta, o reserva que está por empezar.
 
+### Vistas Usuarios (views/usuarios/*)
+
+1. **index**: dividido en dos partes, a la izquierda la lista donde se buscan los registros de usuarios, mostrando(cédula, nombre con apellidos, estado, rol y al final un botón de edición de usuario, lo que lleva a dicha interfaz) y al pulsar un registro se carga la información completa en la parte derecha, mostrando (nombre con apellidos, cédula, código si lo hay, edad según año de nacimiento, género, estado, rol), además cuenta en el lado izquierdo filtros para (cédula o código, estado y rol). En la parte superior debe tener un botón para crear un nuevo usuario, lo que lleva a dicha interfaz.
+
+2. **create**: formulario para llenar los datos necesarios para crear un usuario. Se divide en dos partes, arriba la información básica, para crear al menos a un invitado (nombres, apellidos, cédula y botón para crear invitado). Abajo la información extra para un usuario de la comunidad (año de nacimiento, género, código de estudiante si lo tiene, rol, email, y botón para crear usuario de la comunidad).
+
+3. **edit**: permite editar un usuario, similar a create pero incluye el cambio de estado. Puede tener también email y datos no presentes en invitado, por si se quiere convertir un invitado en usuario de comunidad.
+
+### Vistas Eventos (views/eventos/*)
+
+1. **index**: dividido en dos partes, a la izquierda la lista donde se buscan los registros de eventos, mostrando(nombre del evento, fecha de inicio, aforo, estado y al final un botón de edición de evento, lo que lleva a dicha interfaz) y al pulsar un registro se carga la información completa en la parte derecha, mostrando (nomre del evento, descripción, nombre con apellidos del usuario organizador, fecha de inicio, duración, aforo, estado, si es auto administrado), además cuenta en el lado izquierdo filtros para (estado). En la parte superior debe tener un botón para crear un nuevo evento, lo que lleva a dicha interfaz.
+
+2. **create**: formulario para llenar los datos necesarios para crear un evento (nombre, descripción, cédula del organizador, fecha de inicio, duración, aforo aproximado, si es auto administrado, y listado para agregar o quitar dispositivos vinculados).
+
+3. **edit**: permite editar un evento, similar a create pero incluye el cambio de estado.
+
+### Vistas Dispositivos (views/dispositivos/*)
+
+1. **index**: dividido en dos partes, a la izquierda la lista donde se buscan los registros de dispositivos, mostrando(nombre del dispostivo, tipo de dispositivo, estado y al final un botón de edición de dispositivo, lo que lleva a dicha interfaz) y al pulsar un registro se carga la información completa en la parte derecha, mostrando (nombre del dispositivo, descripción, tipo de dispositivo, estado, y opcionalmente direccion si la hay), además cuenta en el lado izquierdo filtros para (estado, tipo dispositivo). En la parte superior debe tener un botón para crear un nuevo dispositivo, lo que lleva a dicha interfaz.
+
+2. **create**: formulario para llenar los datos necesarios para crear un dispisitivo (nombre, tipo de dispositivo, descripción).
+
+3. **edit**: permite editar un dispositivo, similar a create pero incluye el cambio de estado.
+
+### Vistas Observaciónes (views/observaciones/*)
+
+1. **index**: se divide en dos partes, arriba permite hacer una observación, el formulario tiene (mensaje escrito, selector de asociación de lista reciente del día lo que es opcional). Abajo se divide en dos, a la izquierda está un listado de observaciónes, filtrado por (cédula del usuario admin que la hizo, cédula del usuario asociado a la asociación, evento asociado a la asociación, dispositivo asociado a la asociación, día en que se hizo el registro, y selector de con o sin asociación). Lo que muestra la lista es (fecha del registro, mensaje pero truncado para no ocupar más de una línea). Y a la derecha, y al pulsar sobre una entrada, se ve el mensaje completo, el nombre con apellidos del admin que la hizo y del usuario de la asociación si la hay, así mismo el dsipositivo y evento asociados si los hay.
+
+### Vistas Estadísticas (views/estadisticas/*)
+
+1. **index**: (próximamente...).
+
+### Vistas Auditorías (views/auditorias/*)
+
+1. **index**: muestra un listado de auditorías, con filtros por (cédula de usuario, nombre de usuario, tipo de acción, nombre de tabla, día del registro). Las auditorías muestran la fecha del registro, el nombre de la acción, la tabla afectada, su indice y el nombre del usuario que lo hizo.
+
 ### Vistas Configuración (views/configuracion/*)
 
 (para móvil y escritorio)
 
 1. **index**: permite al usuario logeado cambiar algunos de sus datos, habrá una lista de opciónes por categorías agrupadas:
 
-- Cambio de contraseña, donde se pide la antigua y dos veces la nueva, con su botón de enviar.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+A. Cambio de contraseña, donde se pide la antigua y dos veces la nueva, con su botón de enviar.
 
 ### Vistas Reservaciones (views/reservaciones/*)
 
 (para móvil y escritorio)
 
-Es la única que ve un usuario no administrador, desde allí puede ver horarios de la sala, alertas y ver, hacer o eliminar su propia reserva.
-
-### Vistas Usuarios (views/usuarios/*)
-
-Permite crear un nuevo usuario, editarlo y ver la lista de usuarios filtrados.
-
-### Vistas Dispositivos (views/dispositivos/*)
-
-Para crear dispositivos, actualizarlos y eliminarlos, también permite cambiar el estado de los mismos, por ejemplo para indicar que un dispositivo está en mantenimiento.
-
-### Vistas Eventos (views/eventos/*)
-
-Permite crear, actualiza o eliminar eventos, muestra también la línea de tiempo para poder acomodarlos.
-
-### Vistas Observaciónes (views/observaciones/*)
-
-Allí se crean observaciónes con o sin asociación vinculada, además permite ver según filtro, otras observaciónes hechas.
-
-### Vistas Estadísticas (views/estadisticas/*)
-
-Para observar datos generales de uso de la sala gamer, permite ver gráficos filtrados y también extraer los datos para ser procesados por otro software, por ejemplo Excel.
-
-### Vistas Auditorías (views/auditorias/*)
-
-Muestra según filtro, las acciónes administrativas hechas.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+1. **index**: (próximamente...).
 
 ## Instalar en Local
 
