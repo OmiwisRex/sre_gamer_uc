@@ -22,6 +22,14 @@ Los `eventos` son similares a las reservas, pero pudiendo tener un nombre y desc
 
 Luego los eventos tienen `evento_dispos` que son los dispositivos de la sala que están reservados para un evento M:M.
 
+## Consideraciónes
+
+En la tabla `rols` están los permisos, `RolSeeder.php` los tiene descritos, es importante recalcar que "Invitado" es un usuario sin email o contraseña, "Administrador" tiene permisos básicos de uso de los CRUD y "MAster" es un administrador con permisos totales. Los demás son usuarios regulares con permisos entre invitado y administrador.
+
+No se eliminan registros de las tablas que contienen estado_id, ya que hay un estado de "Eliminado" por seguimiento de auditorías legales. Existe forma de recuperar los eliminados, el admin Master lo puede hacer.
+
+Para un usuario invitado solo es obligatorio: cédula, nombres, apellidos (rol y estado son automáticos).
+
 ## Servicios que usan Controladores
 
 cuando se trata de cursores, es porque se cargarán los datos bajo demanda, entonces al llegar el scroll del frontend abajo, se llama al resto.

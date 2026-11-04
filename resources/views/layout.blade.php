@@ -10,15 +10,15 @@
     @php
         $signedInUser = auth()->user();
         $menuItems = [
-            ['label' => 'Principal', 'path' => '/'],
-            ['label' => 'Administración', 'path' => '/adminsala'],
-            ['label' => 'Usuarios', 'path' => '/usuarios'],
-            ['label' => 'Eventos', 'path' => '/eventos'],
-            ['label' => 'Dispositivos', 'path' => '/dispositivos'],
-            ['label' => 'Observaciones', 'path' => '/observaciones'],
-            ['label' => 'Estadísticas', 'path' => '/estadisticas'],
-            ['label' => 'Auditorías', 'path' => '/auditorias'],
-            ['label' => 'Configuración', 'path' => '/configuracion'],
+            ['label' => 'Principal', 'route' => 'index'],
+            ['label' => 'Administración', 'route' => 'administracion.index'],
+            ['label' => 'Usuarios', 'route' => 'usuarios.index'],
+            ['label' => 'Eventos', 'route' => 'eventos.index'],
+            ['label' => 'Dispositivos', 'route' => 'dispositivos.index'],
+            ['label' => 'Observaciones', 'route' => 'observaciones.index'],
+            ['label' => 'Estadísticas', 'route' => 'estadisticas.index'],
+            ['label' => 'Auditorías', 'route' => 'auditorias.index'],
+            ['label' => 'Configuración', 'route' => 'configuracion.index'],
         ];
     @endphp
 
@@ -67,12 +67,10 @@
                 <nav class="flex flex-col gap-1" aria-label="Navegación principal">
                     @foreach ($menuItems as $item)
                         @php
-                            $isActive = $item['path'] === '/'
-                                ? request()->routeIs('index')
-                                : request()->is(ltrim($item['path'], '/') . '*');
+                            $isActive = request()->routeIs($item['route']);
                         @endphp
                         <a
-                            href="{{ $item['path'] === '/' ? route('index') : url($item['path']) }}"
+                            href="{{ route($item['route']) }}"
                             @class([
                                 'sre-sidebar-link flex items-center gap-3 whitespace-nowrap rounded-lg px-2.5 py-2.5 text-sm font-semibold transition-colors',
                                 'bg-aqua-uno text-white shadow-sm hover:bg-aqua-dos' => $isActive,
