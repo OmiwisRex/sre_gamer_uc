@@ -32,6 +32,26 @@ document.addEventListener('click', (event) => {
     }
 });
 
+document.addEventListener('click', (event) => {
+    if (!(event.target instanceof Element)) {
+        return;
+    }
+
+    const submitButton = event.target.closest('[data-user-type]');
+    if (!(submitButton instanceof HTMLButtonElement)) {
+        return;
+    }
+
+    const form = submitButton.form;
+    if (!form?.matches('[data-user-registration]')) {
+        return;
+    }
+
+    form.querySelectorAll('[data-community-required]').forEach((field) => {
+        field.required = submitButton.dataset.userType === 'community';
+    });
+});
+
 document.addEventListener('submit', (event) => {
     if (event.target instanceof HTMLFormElement && event.target.matches('[data-ui-only]')) {
         event.preventDefault();
@@ -41,6 +61,11 @@ document.addEventListener('submit', (event) => {
 // para los modales
 
 document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('dialog[data-validation-errors]').forEach((dialog) => {
+        if (dialog instanceof HTMLDialogElement && !dialog.open) {
+            dialog.showModal();
+        }
+    });
 
     document.querySelectorAll('[data-modal-open]').forEach(btn => {
         btn.addEventListener('click', () => {

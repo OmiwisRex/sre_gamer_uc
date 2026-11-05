@@ -5,8 +5,8 @@
         </h4>
         @if (isset($asociacionActiva) && $asociacionActiva)
             <span class="sre-badge">{{ $asociacionActiva->estado?->nombre ?? 'Activa' }}</span>
-        @elseif (isset($reservaActiva) && $reservaActiva)
-            <span class="sre-badge sre-badge--neutral">Desde reserva</span>
+        @elseif (! empty($reserva_id))
+            <span class="sre-badge">Reserva</span>
         @endif
     </header>
 
@@ -40,7 +40,7 @@
                     <select class="sre-select" name="dispositivo_id">
                         <option value="">No (Evento)</option>
                         @foreach (($dispositivos ?? collect()) as $dispositivo)
-                            <option value="{{ $dispositivo->id }}">{{ $dispositivo->nombre }}</option>
+                            <option value="{{ $dispositivo->id }}" title="{{ $dispositivo->nombre }}">{{ \Illuminate\Support\Str::limit($dispositivo->nombre, 18) }}</option>
                         @endforeach
                     </select>
                 </label>
@@ -49,7 +49,7 @@
                     <select class="sre-select" name="evento_id">
                         <option value="">Sin evento</option>
                         @foreach (($eventos ?? collect()) as $evento)
-                            <option value="{{ $evento->id }}">{{ $evento->nombre }}</option>
+                            <option value="{{ $evento->id }}" title="{{ $evento->nombre }}">{{ \Illuminate\Support\Str::limit($evento->nombre, 18) }}</option>
                         @endforeach
                     </select>
                 </label>
@@ -58,6 +58,7 @@
                     <textarea class="sre-textarea sre-ta-mas" name="observacion" placeholder="Añade un comentario"></textarea>
                 </label>
             </div>
+            <input type="hidden" name="reserva_id" value="{{ old('reserva_id', $reserva_id ?? '') }}">
             <div class="sre-admin-actions">
                 <button class="sre-button" type="button">Crear asociación</button>
             </div>

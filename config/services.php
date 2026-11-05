@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    'master_admin' => [
+        'nombres' => env('MASTER_ADMIN_NOMBRES'),
+        'apellidos' => env('MASTER_ADMIN_APELLIDOS'),
+        'cedula' => env('MASTER_ADMIN_CEDULA'),
+        'email' => env('MASTER_ADMIN_EMAIL'),
+        'password' => env('MASTER_ADMIN_PASSWORD'),
+    ],
+
 ];

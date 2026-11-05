@@ -1,7 +1,10 @@
 <section class="sre-admin-module sre-admin-module--player" aria-labelledby="mod-jugador-title">
     <header class="sre-admin-module-heading">
-        <div>
+        <div class="sre-admin-card-heading">
             <h3 class="sre-admin-module-title" id="mod-jugador-title">Jugador</h3>
+            @if (session('success'))
+                <p class="sre-badge" role="status">{{ session('success') }}</p>
+            @endif
         </div>
     </header>
 
@@ -24,6 +27,7 @@
                 'reservaActiva' => $reservaActiva ?? null,
                 'dispositivos' => $dispositivos ?? collect(),
                 'eventos' => $eventos ?? collect(),
+                'reserva_id' => $reserva_id ?? null,
             ])
 
             @include('administracion.comp_horas', [

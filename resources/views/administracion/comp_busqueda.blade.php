@@ -1,5 +1,6 @@
 <section class="sre-admin-card sre-search-card" aria-labelledby="comp-busqueda-title">
     <div class="sre-search-layout">
+        
         <div class="sre-search-pane">
             <header class="sre-admin-card-heading">
                 <h4 class="sre-admin-card-title" id="comp-busqueda-title">Búsqueda</h4>
@@ -50,7 +51,7 @@
         </section>
     </div>
 
-    <dialog class="sre-modal" id="guest-modal" aria-labelledby="guest-modal-title">
+    <dialog class="sre-modal" id="guest-modal" aria-labelledby="guest-modal-title" @if ($errors->has('nombres') || $errors->has('apellidos') || $errors->has('cedula')) data-validation-errors @endif>
         <section class="sre-modal-card">
             <header class="sre-modal-heading">
                 <div>
@@ -60,19 +61,9 @@
                 <button class="sre-modal-close" type="button" aria-label="Cerrar" data-modal-close>&times;</button>
             </header>
 
-            <form class="sre-modal-form" data-ui-only>
-                <label class="sre-field">
-                    <span class="sre-label">Nombres</span>
-                    <input class="sre-input" type="text" name="nombres" autocomplete="given-name" placeholder="Nombres">
-                </label>
-                <label class="sre-field">
-                    <span class="sre-label">Apellidos</span>
-                    <input class="sre-input" type="text" name="apellidos" autocomplete="family-name" placeholder="Apellidos">
-                </label>
-                <label class="sre-field">
-                    <span class="sre-label">Cédula</span>
-                    <input class="sre-input" type="text" name="cedula" inputmode="numeric" placeholder="Número de identificación">
-                </label>
+            <form class="sre-modal-form" action="{{ route('usuarios.guest.store') }}" method="POST">
+                @csrf
+                @include('usuarios.partials.guest-fields')
                 <div class="sre-form-actions sre-modal-actions">
                     <button class="sre-button" type="submit">Crear invitado</button>
                     <button class="sre-button sre-button--secondary" type="button" data-modal-close>Cancelar</button>

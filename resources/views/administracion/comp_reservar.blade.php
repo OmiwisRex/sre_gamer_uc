@@ -43,7 +43,7 @@
                     <select class="sre-select" name="tipo_dispo_id">
                         <option value="">Selecciona un tipo</option>
                         @foreach (($tiposDispo ?? collect()) as $tipoDispo)
-                            <option value="{{ $tipoDispo->id }}">{{ $tipoDispo->nombre }}</option>
+                            <option value="{{ $tipoDispo->id }}" title="{{ $tipoDispo->nombre }}">{{ \Illuminate\Support\Str::limit($tipoDispo->nombre, 18) }}</option>
                         @endforeach
                     </select>
                 </label>
@@ -52,21 +52,25 @@
                     <select class="sre-select" name="evento_id">
                         <option value="">Sin evento</option>
                         @foreach (($eventos ?? collect()) as $evento)
-                            <option value="{{ $evento->id }}">{{ $evento->nombre }}</option>
+                            <option value="{{ $evento->id }}" title="{{ $evento->nombre }}">{{ \Illuminate\Support\Str::limit($evento->nombre, 18) }}</option>
                         @endforeach
                     </select>
                 </label>
                 <label class="sre-field">
                     <span class="sre-label">Fecha</span>
-                    <input class="sre-input" type="date" name="fecha_reserva">
+                    <input class="sre-input" type="date" name="fecha_reserva" value="{{ old('fecha_reserva', now()->format('Y-m-d')) }}">
                 </label>
                 <label class="sre-field">
                     <span class="sre-label">Hora</span>
-                    <input class="sre-input" type="time" name="hora_reserva">
+                    <input class="sre-input" type="time" name="hora_reserva" value="{{ old('hora_reserva', now()->format('H:i')) }}">
                 </label>
                 <label class="sre-field">
                     <span class="sre-label">Duración (minutos)</span>
-                    <input class="sre-input" type="number" name="duracion_min" min="1" step="1" placeholder="Minutos reservados">
+                    <select class="sre-select" name="duracion_min">
+                        @foreach ([30, 60, 90, 120, 150, 180] as $duracion)
+                            <option value="{{ $duracion }}">{{ $duracion }} min</option>
+                        @endforeach
+                    </select>
                 </label>
             </div>
             <div class="sre-admin-actions">

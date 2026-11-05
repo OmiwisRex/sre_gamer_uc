@@ -8,8 +8,23 @@
             <div class="sre-page-heading">
                 <h2 class="sre-page-title" id="usuarios-title">Usuarios</h2>
             </div>
-            <a class="sre-button" href="{{ route('usuarios.create') }}">Crear usuario</a>
+            <div class="sre-form-actions">
+                <button class="sre-button sre-button--secondary" type="button" data-modal-open="users-guest-modal">Crear invitado</button>
+                <a class="sre-button" href="{{ route('usuarios.create') }}">Crear usuario</a>
+            </div>
         </header>
+
+        @if (session('success'))
+            <p class="sre-badge" role="status">{{ session('success') }}</p>
+        @endif
+
+        @if ($errors->any())
+            <ul class="sre-hint" role="alert">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        @endif
 
         <div class="sre-resource-layout sre-resource-layout--list-wide">
             <section class="sre-panel sre-resource-sidebar" aria-labelledby="usuarios-list-title">
@@ -90,7 +105,7 @@
                             </div>
                             <div class="sre-detail-item">
                                 <dt class="sre-detail-label">Código</dt>
-                                <dd class="sre-detail-value">{{ $usuarioSeleccionado->codigo ?: 'No registrado' }}</dd>
+                                <dd class="sre-detail-value">{{ $usuarioSeleccionado->codigo && ! str_starts_with($usuarioSeleccionado->codigo, 'INV-') && ! str_starts_with($usuarioSeleccionado->codigo, 'USR-') ? $usuarioSeleccionado->codigo : 'No registrado' }}</dd>
                             </div>
                             <div class="sre-detail-item">
                                 <dt class="sre-detail-label">Edad</dt>
@@ -123,5 +138,25 @@
                 @endif
             </section>
         </div>
+
+        <dialog class="sre-modal" id="users-guest-modal" aria-labelledby="users-guest-modal-title" @if ($errors->has('nombres') || $errors->has('apellidos') || $errors->has('cedula')) data-validation-errors @endif>
+            <section class="sre-modal-card">
+                <header class="sre-modal-heading">
+                    <div>
+                        <p class="sre-eyebrow">Registro rápido</p>
+                        <h2 class="sre-modal-title" id="users-guest-modal-title">Crear invitado</h2>
+                    </div>
+                    <button class="sre-modal-close" type="button" aria-label="Cerrar" data-modal-close>&times;</button>
+                </header>
+                <form class="sre-modal-form" action="{{ route('usuarios.guest.store') }}" method="POST">
+                    @csrf
+                    @include('usuarios.partials.guest-fields')
+                    <div class="sre-form-actions sre-modal-actions">
+                        <button class="sre-button" type="submit">Crear invitado</button>
+                        <button class="sre-button sre-button--secondary" type="button" data-modal-close>Cancelar</button>
+                    </div>
+                </form>
+            </section>
+        </dialog>
     </section>
 @endsection

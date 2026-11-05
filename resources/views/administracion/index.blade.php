@@ -20,6 +20,7 @@
                 'tiposDispo' => $tiposDispo ?? collect(),
                 'eventos' => $eventos ?? collect(),
                 'dispositivos' => $dispositivos ?? collect(),
+                'reserva_id' => $reserva_id ?? null,
             ])
 
             @include('administracion.mod_alertas', [

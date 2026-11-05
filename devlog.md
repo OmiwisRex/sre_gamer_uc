@@ -55,3 +55,11 @@
 
 - Om, terminada la descripción detallada del frontend, listo para la IA.
 - Om, construidas la mayoría 80% de vistas frontend .blade, con asistencia de IA.
+
+05/11/2026 Ju:
+
+- Om, controladores para obtener dispositivos, tipos de dispositivos y eventos, para selector de creación de asociaciónes y reservas.
+- Om, controlador para crear dispositivos.
+- Om, controlador y servicio para crear eventos, aún sin lógica de colisiónes.
+- Om, controlador para crear usuario, ya sea como invitado o con todos los datos.
+- Om, seeder y configuracion en .env para admin Master.
