@@ -85,6 +85,8 @@ return [
 
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
 
+    'usuarios_cursor_size' => max(1, (int) env('USUARIOS_CURSOR_SIZE', 20)),
+
     /*
     |--------------------------------------------------------------------------
     | Encryption Key

@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Sesion extends Model
 {
+    protected $table = 'sesiones';
+
     protected $fillable = [
         'usuario_id',
         'email',

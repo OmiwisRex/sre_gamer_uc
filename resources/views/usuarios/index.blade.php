@@ -32,18 +32,25 @@
                     <h3 class="sre-panel-title" id="usuarios-list-title">Buscar usuarios</h3>
                 </div>
 
-                <form class="sre-filter-form" action="{{ url('/usuarios') }}" method="get">
+                <form
+                    class="sre-filter-form"
+                    action="{{ route('usuarios.index') }}"
+                    method="get"
+                    data-user-search-form
+                    data-search-url="{{ route('usuarios.search') }}"
+                    data-detail-url="{{ route('usuarios.detail', '__USER_ID__') }}"
+                >
                     <div class="sre-filter-grid-long">
                         <label class="sre-field">
                             <span class="sre-label">Cédula o código</span>
-                            <input class="sre-input" type="search" name="identificacion" value="{{ request('identificacion') }}" placeholder="Escribe cédula o código">
+                            <input class="sre-input" type="search" name="identificacion" placeholder="Escribe cédula o código">
                         </label>
                         <label class="sre-field">
                             <span class="sre-label">Estado</span>
                             <select class="sre-select" name="estado_id">
                                 <option value="">Todos</option>
-                                @foreach (($estados ?? collect()) as $estado)
-                                    <option value="{{ $estado->id }}" @selected((string) request('estado_id') === (string) $estado->id)>{{ $estado->nombre }}</option>
+                                @foreach ($estados as $estado)
+                                    <option value="{{ $estado->id }}">{{ $estado->nombre }}</option>
                                 @endforeach
                             </select>
                         </label>
@@ -51,8 +58,8 @@
                             <span class="sre-label">Rol</span>
                             <select class="sre-select" name="rol_id">
                                 <option value="">Todos</option>
-                                @foreach (($roles ?? collect()) as $rol)
-                                    <option value="{{ $rol->id }}" @selected((string) request('rol_id') === (string) $rol->id)>{{ $rol->nombre }}</option>
+                                @foreach ($roles as $rol)
+                                    <option value="{{ $rol->id }}">{{ $rol->nombre }}</option>
                                 @endforeach
                             </select>
                         </label>
@@ -61,81 +68,27 @@
                 </form>
 
                 <div class="sre-panel-content">
-                    <div class="sre-record-list">
-                        @forelse (($usuarios ?? collect()) as $usuario)
-                            <article class="sre-record">
-                                <a href="{{ url('/usuarios') }}?seleccionado={{ $usuario->id }}" aria-label="Ver detalle de {{ $usuario->nombres }} {{ $usuario->apellidos }}">
-                                    <div class="sre-record-top">
-                                        <h4 class="sre-record-name">{{ $usuario->nombres }} {{ $usuario->apellidos }}</h4>
-                                        <span class="sre-badge">{{ $usuario->estado?->nombre ?? 'Sin estado' }}</span>
-                                    </div>
-                                    <div class="sre-record-meta">
-                                        <span>C.C. {{ $usuario->cedula }}</span>
-                                        <span>{{ $usuario->rol?->nombre ?? 'Sin rol' }}</span>
-                                    </div>
-                                </a>
-                                <div class="sre-record-actions">
-                                    <a class="sre-button sre-button--secondary sre-button--small" href="{{ url('/usuarios/' . $usuario->id . '/edit') }}">Editar</a>
-                                </div>
-                            </article>
-                        @empty
-                            <div class="sre-empty-state">
-                                <strong>No hay usuarios para mostrar</strong>
-                                <span>Los registros aparecerán aquí cuando estén disponibles.</span>
-                            </div>
-                        @endforelse
+                    <div class="sre-record-list" data-user-results role="list"></div>
+                    <div class="sre-empty-state" data-user-results-status role="status" aria-live="polite">
+                        <strong>No hay usuarios para mostrar</strong>
+                        <span>Prueba con otros filtros de búsqueda.</span>
                     </div>
                 </div>
             </section>
 
             <section class="sre-panel sre-resource-detail" aria-labelledby="usuario-detail-title">
-                @if (isset($usuarioSeleccionado) && $usuarioSeleccionado)
-                    <div class="sre-panel-heading">
-                        <div>
-                            <h3 class="sre-detail-title" id="usuario-detail-title">{{ $usuarioSeleccionado->nombres }} {{ $usuarioSeleccionado->apellidos }}</h3>
-                            <p class="sre-detail-subtitle">Información del registro seleccionado</p>
-                        </div>
-                        <a class="sre-button sre-button--secondary sre-button--small" href="{{ url('/usuarios/' . $usuarioSeleccionado->id . '/edit') }}">Editar</a>
+                <div class="sre-panel-heading">
+                    <div>
+                        <h3 class="sre-detail-title" id="usuario-detail-title" data-user-detail-title>Detalle del usuario</h3>
+                        <p class="sre-detail-subtitle" data-user-detail-subtitle>Selecciona un usuario de los resultados.</p>
                     </div>
-                    <div class="sre-panel-content">
-                        <dl class="sre-detail-grid">
-                            <div class="sre-detail-item">
-                                <dt class="sre-detail-label">Cédula</dt>
-                                <dd class="sre-detail-value">{{ $usuarioSeleccionado->cedula }}</dd>
-                            </div>
-                            <div class="sre-detail-item">
-                                <dt class="sre-detail-label">Código</dt>
-                                <dd class="sre-detail-value">{{ $usuarioSeleccionado->codigo && ! str_starts_with($usuarioSeleccionado->codigo, 'INV-') && ! str_starts_with($usuarioSeleccionado->codigo, 'USR-') ? $usuarioSeleccionado->codigo : 'No registrado' }}</dd>
-                            </div>
-                            <div class="sre-detail-item">
-                                <dt class="sre-detail-label">Edad</dt>
-                                <dd class="sre-detail-value">{{ $usuarioSeleccionado->year_nace ? now()->year - $usuarioSeleccionado->year_nace : 'No registrada' }}</dd>
-                            </div>
-                            <div class="sre-detail-item">
-                                <dt class="sre-detail-label">Género</dt>
-                                <dd class="sre-detail-value">{{ $usuarioSeleccionado->genero?->nombre ?? 'No registrado' }}</dd>
-                            </div>
-                            <div class="sre-detail-item">
-                                <dt class="sre-detail-label">Estado</dt>
-                                <dd class="sre-detail-value">{{ $usuarioSeleccionado->estado?->nombre ?? 'Sin estado' }}</dd>
-                            </div>
-                            <div class="sre-detail-item">
-                                <dt class="sre-detail-label">Rol</dt>
-                                <dd class="sre-detail-value">{{ $usuarioSeleccionado->rol?->nombre ?? 'Sin rol' }}</dd>
-                            </div>
-                        </dl>
+                </div>
+                <div class="sre-panel-content" data-user-detail aria-live="polite">
+                    <div class="sre-empty-state">
+                        <strong>Selecciona un usuario</strong>
+                        <span>Su información completa se mostrará en este espacio.</span>
                     </div>
-                @else
-                    <div class="sre-panel-heading">
-                        <h3 class="sre-panel-title" id="usuario-detail-title">Detalle del usuario</h3>
-                    </div>
-                    <div class="sre-panel-content">
-                        <div class="sre-empty-state">
-                            <strong>Selecciona un usuario</strong>
-                            <span>Su información completa se mostrará en este espacio.</span>
-                        </div>
-                    </div>
-                @endif
+                </div>
             </section>
         </div>
 

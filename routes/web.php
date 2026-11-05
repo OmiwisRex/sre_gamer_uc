@@ -17,7 +17,9 @@ Route::get('/adminsala', [AdministracionController::class, 'index'])->name('admi
 Route::get('/usuarios/create', [UsuarioController::class, 'create'])->name('usuarios.create');
 Route::post('/usuarios/invitados', [UsuarioController::class, 'storeGuest'])->name('usuarios.guest.store');
 Route::post('/usuarios/comunidad', [UsuarioController::class, 'storeCommunity'])->name('usuarios.community.store');
-Route::view('/usuarios', 'usuarios.index')->name('usuarios.index');
+Route::get('/usuarios/busqueda', [UsuarioController::class, 'search'])->name('usuarios.search');
+Route::get('/usuarios/{usuario}/detalle', [UsuarioController::class, 'detail'])->name('usuarios.detail');
+Route::get('/usuarios', [UsuarioController::class, 'index'])->name('usuarios.index');
 Route::get('/eventos/create', [EventoController::class, 'create'])->name('eventos.create');
 Route::post('/eventos', [EventoController::class, 'store'])->name('eventos.store');
 Route::view('/eventos', 'eventos.index')->name('eventos.index');

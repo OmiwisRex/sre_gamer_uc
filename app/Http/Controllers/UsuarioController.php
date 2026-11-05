@@ -6,7 +6,10 @@ use App\Mail\UsuarioAccesoMail;
 use App\Models\Estado;
 use App\Models\Genero;
 use App\Models\Rol;
+use App\Models\Usuario;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,6 +23,107 @@ use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 class UsuarioController extends Controller
 {
     private const HIDDEN_COMMUNITY_ROLES = ['Administrador', 'Master', 'Invitado'];
+
+    public function index(): View
+    {
+        return view('usuarios.index', [
+            'estados' => Estado::query()
+                ->whereHas('usuarios')
+                ->orderBy('nombre')
+                ->get(['id', 'nombre']),
+            'roles' => Rol::query()
+                ->where('nombre', '!=', 'Master')
+                ->orderBy('nombre')
+                ->get(['id', 'nombre']),
+        ]);
+    }
+
+    public function search(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'identificacion' => ['nullable', 'string', 'max:64'],
+            'estado_id' => ['nullable', 'integer', 'exists:estados,id'],
+            'rol_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('rols', 'id')->where(
+                    fn (Builder $query) => $query->where('nombre', '!=', 'Master')
+                ),
+            ],
+            'cursor' => ['nullable', 'string', 'max:2048'],
+        ]);
+
+        $identificacion = trim((string) ($validated['identificacion'] ?? ''));
+        $usuarios = Usuario::query()
+            ->whereHas('rol', fn (EloquentBuilder $query) => $query->where('nombre', '!=', 'Master'))
+            ->with(['estado:id,nombre', 'rol:id,nombre'])
+            ->when($identificacion !== '', function (EloquentBuilder $query) use ($identificacion): void {
+                $query->where(function (EloquentBuilder $query) use ($identificacion): void {
+                    $query->where('cedula', 'like', "%{$identificacion}%")
+                        ->orWhere('codigo', 'like', "%{$identificacion}%");
+                });
+            })
+            ->when(isset($validated['estado_id']), function (EloquentBuilder $query) use ($validated): void {
+                $query->where('estado_id', $validated['estado_id']);
+            })
+            ->when(isset($validated['rol_id']), function (EloquentBuilder $query) use ($validated): void {
+                $query->where('rol_id', $validated['rol_id']);
+            })
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->cursorPaginate(config('app.usuarios_cursor_size', 20));
+
+        return response()->json([
+            'data' => $usuarios->getCollection()
+                ->map(fn (Usuario $usuario): array => [
+                    'id' => $usuario->id,
+                    'nombres' => $usuario->nombres,
+                    'apellidos' => $usuario->apellidos,
+                    'cedula' => $usuario->cedula,
+                    'estado' => $usuario->estado?->nombre,
+                    'rol' => $usuario->rol?->nombre,
+                ])
+                ->values(),
+            'next_cursor' => $usuarios->nextCursor()?->encode(),
+            'has_more' => $usuarios->hasMorePages(),
+        ]);
+    }
+
+    public function detail(Usuario $usuario): JsonResponse
+    {
+        $usuario->load([
+            'estado:id,nombre',
+            'genero:id,nombre',
+            'rol:id,nombre',
+            'sesion:id,usuario_id,email',
+        ]);
+
+        $isGuest = $usuario->rol?->nombre === 'Invitado';
+        $email = $usuario->sesion?->email;
+        $codigo = $usuario->codigo;
+
+        if ($isGuest || ! filled($email)) {
+            $email = null;
+        }
+
+        if (! filled($codigo) || str_starts_with($codigo, 'INV-') || str_starts_with($codigo, 'USR-')) {
+            $codigo = null;
+        }
+
+        return response()->json([
+            'data' => [
+                'nombres' => $usuario->nombres,
+                'apellidos' => $usuario->apellidos,
+                'cedula' => $usuario->cedula,
+                'codigo' => $codigo,
+                'edad' => $usuario->year_nace > 0 ? now()->year - $usuario->year_nace : null,
+                'email' => $email,
+                'genero' => $usuario->genero?->nombre,
+                'estado' => $usuario->estado?->nombre,
+                'rol' => $usuario->rol?->nombre,
+            ],
+        ]);
+    }
 
     public function create(): View
     {
