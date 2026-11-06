@@ -24,6 +24,11 @@ class Estado extends Model
         return $this->hasMany(Dispositivo::class);
     }
 
+    public function eventos(): HasMany
+    {
+        return $this->hasMany(Evento::class);
+    }
+
     public function reservas(): HasMany
     {
         return $this->hasMany(Reserva::class);

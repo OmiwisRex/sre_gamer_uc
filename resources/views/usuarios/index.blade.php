@@ -36,9 +36,10 @@
                     class="sre-filter-form"
                     action="{{ route('usuarios.index') }}"
                     method="get"
-                    data-user-search-form
+                    data-resource-search-form
+                    data-resource-type="usuario"
                     data-search-url="{{ route('usuarios.search') }}"
-                    data-detail-url="{{ route('usuarios.detail', '__USER_ID__') }}"
+                    data-detail-url="{{ route('usuarios.detail', '__RECORD_ID__') }}"
                 >
                     <div class="sre-filter-grid-long">
                         <label class="sre-field">
@@ -68,8 +69,8 @@
                 </form>
 
                 <div class="sre-panel-content">
-                    <div class="sre-record-list" data-user-results role="list"></div>
-                    <div class="sre-empty-state" data-user-results-status role="status" aria-live="polite">
+                    <div class="sre-record-list" data-resource-results role="list"></div>
+                    <div class="sre-empty-state" data-resource-results-status role="status" aria-live="polite">
                         <strong>No hay usuarios para mostrar</strong>
                         <span>Prueba con otros filtros de búsqueda.</span>
                     </div>
@@ -79,10 +80,11 @@
             <section class="sre-panel sre-resource-detail" aria-labelledby="usuario-detail-title">
                 <div class="sre-panel-heading">
                     <div>
-                        <h3 class="sre-detail-title" id="usuario-detail-title" data-user-detail-title>Detalle del usuario</h3>
+                        <h3 class="sre-detail-title" id="usuario-detail-title" data-resource-detail-title>Detalle del usuario</h3>
+                        <div data-resource-detail-action></div>
                     </div>
                 </div>
-                <div class="sre-panel-content" data-user-detail aria-live="polite">
+                <div class="sre-panel-content" data-resource-detail aria-live="polite">
                     <div class="sre-empty-state">
                         <strong>Selecciona un usuario</strong>
                         <span>Su información completa se mostrará en este espacio.</span>

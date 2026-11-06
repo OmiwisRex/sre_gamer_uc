@@ -11,18 +11,37 @@
             <a class="sre-button" href="{{ route('dispositivos.create') }}">Crear dispositivo</a>
         </header>
 
+        @if (session('success'))
+            <p class="sre-badge" role="status">{{ session('success') }}</p>
+        @endif
+        @if ($errors->any())
+            <ul class="sre-hint" role="alert">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        @endif
+
         <div class="sre-resource-layout sre-resource-layout--list-wide">
             <section class="sre-panel sre-resource-sidebar" aria-labelledby="dispositivos-list-title">
                 <div class="sre-panel-heading">
                     <h3 class="sre-panel-title" id="dispositivos-list-title">Buscar dispositivos</h3>
                 </div>
-                <form class="sre-filter-form" action="{{ url('/dispositivos') }}" method="get">
+                <form
+                    class="sre-filter-form"
+                    action="{{ route('dispositivos.index') }}"
+                    method="get"
+                    data-resource-search-form
+                    data-resource-type="dispositivo"
+                    data-search-url="{{ route('dispositivos.search') }}"
+                    data-detail-url="{{ route('dispositivos.detail', '__RECORD_ID__') }}"
+                >
                     <div class="sre-filter-grid-long">
                         <label class="sre-field">
                             <span class="sre-label">Tipo de dispositivo</span>
                             <select class="sre-select" name="tipo_dispo_id">
                                 <option value="">Todos</option>
-                                @foreach (($tiposDispo ?? collect()) as $tipoDispo)
+                                @foreach ($tiposDispo as $tipoDispo)
                                     <option value="{{ $tipoDispo->id }}" @selected((string) request('tipo_dispo_id') === (string) $tipoDispo->id)>{{ $tipoDispo->nombre }}</option>
                                 @endforeach
                             </select>
@@ -31,7 +50,7 @@
                             <span class="sre-label">Estado</span>
                             <select class="sre-select" name="estado_id">
                                 <option value="">Todos</option>
-                                @foreach (($estados ?? collect()) as $estado)
+                                @foreach ($estados as $estado)
                                     <option value="{{ $estado->id }}" @selected((string) request('estado_id') === (string) $estado->id)>{{ $estado->nombre }}</option>
                                 @endforeach
                             </select>
@@ -40,74 +59,27 @@
                     </div>
                 </form>
                 <div class="sre-panel-content">
-                    <div class="sre-record-list">
-                        @forelse (($dispositivos ?? collect()) as $dispositivo)
-                            <article class="sre-record">
-                                <a href="{{ url('/dispositivos') }}?seleccionado={{ $dispositivo->id }}" aria-label="Ver detalle de {{ $dispositivo->nombre }}">
-                                    <div class="sre-record-top">
-                                        <h4 class="sre-record-name">{{ $dispositivo->nombre }}</h4>
-                                        <span class="sre-badge">{{ $dispositivo->estado?->nombre ?? 'Sin estado' }}</span>
-                                    </div>
-                                    <div class="sre-record-meta">
-                                        <span>{{ $dispositivo->tipoDispo?->nombre ?? 'Sin tipo' }}</span>
-                                    </div>
-                                </a>
-                                <div class="sre-record-actions">
-                                    <a class="sre-button sre-button--secondary sre-button--small" href="{{ url('/dispositivos/' . $dispositivo->id . '/edit') }}">Editar</a>
-                                </div>
-                            </article>
-                        @empty
-                            <div class="sre-empty-state">
-                                <strong>No hay dispositivos para mostrar</strong>
-                                <span>Los registros aparecerán aquí cuando estén disponibles.</span>
-                            </div>
-                        @endforelse
+                    <div class="sre-record-list" data-resource-results role="list"></div>
+                    <div class="sre-empty-state" data-resource-results-status role="status" aria-live="polite">
+                        <strong>No hay dispositivos para mostrar</strong>
+                        <span>Aplica filtros para buscar dispositivos.</span>
                     </div>
                 </div>
             </section>
 
             <section class="sre-panel sre-resource-detail" aria-labelledby="dispositivo-detail-title">
-                @if (isset($dispositivoSeleccionado) && $dispositivoSeleccionado)
-                    <div class="sre-panel-heading">
-                        <div>
-                            <h3 class="sre-detail-title" id="dispositivo-detail-title">{{ $dispositivoSeleccionado->nombre }}</h3>
-                            <p class="sre-detail-subtitle">Información del dispositivo seleccionado</p>
-                        </div>
-                        <a class="sre-button sre-button--secondary sre-button--small" href="{{ url('/dispositivos/' . $dispositivoSeleccionado->id . '/edit') }}">Editar</a>
+                <div class="sre-panel-heading">
+                    <div>
+                        <h3 class="sre-detail-title" id="dispositivo-detail-title" data-resource-detail-title>Detalle del dispositivo</h3>
+                        <div data-resource-detail-action></div>
                     </div>
-                    <div class="sre-panel-content">
-                        <dl class="sre-detail-grid">
-                            <div class="sre-detail-item">
-                                <dt class="sre-detail-label">Tipo de dispositivo</dt>
-                                <dd class="sre-detail-value">{{ $dispositivoSeleccionado->tipoDispo?->nombre ?? 'Sin tipo' }}</dd>
-                            </div>
-                            <div class="sre-detail-item">
-                                <dt class="sre-detail-label">Estado</dt>
-                                <dd class="sre-detail-value">{{ $dispositivoSeleccionado->estado?->nombre ?? 'Sin estado' }}</dd>
-                            </div>
-                            <div class="sre-detail-item sre-detail-item--wide">
-                                <dt class="sre-detail-label">Descripción</dt>
-                                <dd class="sre-detail-value">{{ $dispositivoSeleccionado->descripcion ?: 'Sin descripción' }}</dd>
-                            </div>
-                            @if ($dispositivoSeleccionado->direccion)
-                                <div class="sre-detail-item sre-detail-item--wide">
-                                    <dt class="sre-detail-label">Dirección</dt>
-                                    <dd class="sre-detail-value">{{ $dispositivoSeleccionado->direccion }}</dd>
-                                </div>
-                            @endif
-                        </dl>
+                </div>
+                <div class="sre-panel-content" data-resource-detail aria-live="polite">
+                    <div class="sre-empty-state">
+                        <strong>Selecciona un dispositivo</strong>
+                        <span>Su tipo, estado y descripción se mostrarán en este espacio.</span>
                     </div>
-                @else
-                    <div class="sre-panel-heading">
-                        <h3 class="sre-panel-title" id="dispositivo-detail-title">Detalle del dispositivo</h3>
-                    </div>
-                    <div class="sre-panel-content">
-                        <div class="sre-empty-state">
-                            <strong>Selecciona un dispositivo</strong>
-                            <span>Su tipo, estado y descripción se mostrarán en este espacio.</span>
-                        </div>
-                    </div>
-                @endif
+                </div>
             </section>
         </div>
     </section>

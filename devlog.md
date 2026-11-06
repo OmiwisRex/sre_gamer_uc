@@ -68,3 +68,9 @@
 06/11/2026 Vi:
 
 - Om, ajustada presentación detalles de usuario.
+- Om, consulta de listado de eventos con cursor de scroll y detalles de un evento
+- Om, consulta de listado de dispositivos con cursor de scroll y detalles de un dispositivo
+- Om, edición de usuarios.
+- Om, edición de dispositivos.
+- Om, edición de eventos.
+- Om, cambio de contraseña.

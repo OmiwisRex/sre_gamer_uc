@@ -58,41 +58,101 @@ document.addEventListener('submit', (event) => {
     }
 });
 
-// para los modales
+const resourceSearchConfigurations = {
+    usuario: {
+        plural: 'usuarios',
+        detailTitle: 'Detalle del usuario',
+        emptyDetailTitle: 'Selecciona un usuario',
+        emptyDetailDescription: 'Su información completa se mostrará en este espacio.',
+        name: (record) => `${record.nombres} ${record.apellidos}`,
+        meta: (record) => [`C.C. ${record.cedula}`, record.rol || 'Sin rol'],
+        details: (record) => [
+            ['Cédula', record.cedula],
+            ['Código', record.codigo],
+            ['Edad', record.edad],
+            ['E-Mail', record.email],
+            ['Género', record.genero],
+            ['Estado', record.estado],
+            ['Rol', record.rol],
+        ],
+    },
+    dispositivo: {
+        plural: 'dispositivos',
+        detailTitle: 'Detalle del dispositivo',
+        emptyDetailTitle: 'Selecciona un dispositivo',
+        emptyDetailDescription: 'Su tipo, estado y descripción se mostrarán en este espacio.',
+        name: (record) => record.nombre,
+        meta: (record) => [record.tipo || 'Sin tipo'],
+        details: (record) => [
+            ['Tipo', record.tipo],
+            ['Estado', record.estado],
+            ['Dirección', record.direccion],
+            ['D', record.descripcion]
+        ],
+    },
+    evento: {
+        plural: 'eventos',
+        detailTitle: 'Detalle del evento',
+        emptyDetailTitle: 'Selecciona un evento',
+        emptyDetailDescription: 'Su descripción, programación y dispositivos se mostrarán en este espacio.',
+        name: (record) => record.nombre,
+        meta: (record) => [
+            record.inicio ? `Inicio: ${formatInicio(record.inicio)}` : 'Fecha por definir',
+            `Aforo: ${record.aforo}`,
+        ],
+        details: (record) => [
+            ['Organiza', record.organizador],
+            ['Inicio', formatInicio(record.inicio)],
+            ['Duración', record.duracion],
+            ['Aforo', record.aforo],
+            ['Estado', record.estado],
+            ['Admin', record.administracion],
+            ['D', record.descripcion],
+            ['Dispositivos vinculados', ' '],
+            ...(record.dispositivos ?? []).map((name, index) => [
+                `D${index + 1}`,
+                name
+            ]),
+        ],
+    },
+};
 
-document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('dialog[data-validation-errors]').forEach((dialog) => {
-        if (dialog instanceof HTMLDialogElement && !dialog.open) {
-            dialog.showModal();
-        }
-    });
+const formatInicio = (fecha) => {
+    const [date, time] = fecha.split(' ');
+    let [hours, minutes] = time.split(':').map(Number);
 
-    document.querySelectorAll('[data-modal-open]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const modal = document.getElementById(btn.dataset.modalOpen);
-            if (modal) modal.showModal();
-        });
-    });
+    const periodo = hours >= 12 ? 'pm' : 'am';
+    hours = hours % 12 || 12;
 
-    document.querySelectorAll('[data-modal-close]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            btn.closest('dialog')?.close();
-        });
-    });
+    return `${date} ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} ${periodo}`;
+};
 
-    const searchForm = document.querySelector('[data-user-search-form]');
-    if (!(searchForm instanceof HTMLFormElement)) {
-        return;
-    }
+const createEmptyState = (title, description) => {
+    const emptyState = document.createElement('div');
+    emptyState.className = 'sre-empty-state';
 
+    const strong = document.createElement('strong');
+    strong.textContent = title;
+    const span = document.createElement('span');
+    span.textContent = description;
+
+    emptyState.append(strong, span);
+
+    return emptyState;
+};
+
+const setupResourceSearch = (searchForm) => {
+    const configuration = resourceSearchConfigurations[searchForm.dataset.resourceType];
     const resultsPanel = searchForm.closest('.sre-resource-sidebar')?.querySelector('.sre-panel-content');
-    const results = document.querySelector('[data-user-results]');
-    const resultsStatus = document.querySelector('[data-user-results-status]');
-    const detail = document.querySelector('[data-user-detail]');
-    const detailTitle = document.querySelector('[data-user-detail-title]');
+    const results = searchForm.closest('.sre-resource-layout')?.querySelector('[data-resource-results]');
+    const resultsStatus = searchForm.closest('.sre-resource-layout')?.querySelector('[data-resource-results-status]');
+    const detail = searchForm.closest('.sre-resource-layout')?.querySelector('[data-resource-detail]');
+    const detailTitle = searchForm.closest('.sre-resource-layout')?.querySelector('[data-resource-detail-title]');
+    const detailAction = searchForm.closest('.sre-resource-layout')?.querySelector('[data-resource-detail-action]');
 
     if (
-        !(resultsPanel instanceof HTMLElement)
+        !configuration
+        || !(resultsPanel instanceof HTMLElement)
         || !(results instanceof HTMLElement)
         || !(resultsStatus instanceof HTMLElement)
         || !(detail instanceof HTMLElement)
@@ -108,100 +168,58 @@ document.addEventListener('DOMContentLoaded', () => {
     let searchController = null;
     let detailController = null;
 
-    const createEmptyState = (title, description) => {
-        const emptyState = document.createElement('div');
-        emptyState.className = 'sre-empty-state';
-
-        const strong = document.createElement('strong');
-        strong.textContent = title;
-        const span = document.createElement('span');
-        span.textContent = description;
-
-        emptyState.append(strong, span);
-
-        return emptyState;
-    };
-
     const setResultsStatus = (message) => {
         resultsStatus.className = 'sre-hint';
         resultsStatus.textContent = message;
     };
 
     const clearDetail = () => {
-        detailTitle.textContent = 'Detalle del usuario';
+        detailTitle.textContent = configuration.detailTitle;
+        detailAction?.replaceChildren();
         detail.replaceChildren(createEmptyState(
-            'Selecciona un usuario',
-            'Su información completa se mostrará en este espacio.',
+            configuration.emptyDetailTitle,
+            configuration.emptyDetailDescription,
         ));
     };
 
-    const renderDetail = (usuario) => {
-        detailTitle.textContent = `${usuario.nombres} ${usuario.apellidos}`;
-
-        const fields = [
-            ['Cédula', usuario.cedula],
-            ['Código', usuario.codigo],
-            ['Edad', usuario.edad],
-            ['E-Mail', usuario.email],
-            ['Género', usuario.genero],
-            ['Estado', usuario.estado],
-            ['Rol', usuario.rol],
-        ];
-
-        const list = document.createElement('dl');
-        list.className = 'sre-detail-list';
-
-        fields.forEach(([label, value]) => {
-            const item = document.createElement('div');
-            item.className = 'sre-detail-row';
-
-            const term = document.createElement('dt');
-            term.className = 'sre-detail-label';
-            term.textContent = label + ':';
-
-            const description = document.createElement('dd');
-            description.className = 'sre-detail-value';
-            description.textContent = value === null || value === ''
-                ? 'No registrado'
-                : String(value);
-
-            item.append(term, description);
-            list.append(item);
-        });
-
-        detail.replaceChildren(list);
-    };
-
-    const renderUserRecord = (usuario) => {
+    const renderRecord = (item) => {
+        const nameText = configuration.name(item);
         const record = document.createElement('article');
         record.className = 'sre-record';
         record.setAttribute('role', 'listitem');
-        record.dataset.userId = String(usuario.id);
 
         const button = document.createElement('button');
         button.className = 'sre-record-select';
         button.type = 'button';
-        button.dataset.userId = String(usuario.id);
+        button.dataset.recordId = String(item.id);
+        if (item.edit_url) {
+            button.dataset.editUrl = item.edit_url;
+        }
         button.setAttribute('aria-pressed', 'false');
-        button.setAttribute('aria-label', `Ver detalle de ${usuario.nombres} ${usuario.apellidos}`);
+        button.setAttribute('aria-label', `Ver detalle de ${nameText}`);
 
         const top = document.createElement('div');
         top.className = 'sre-record-top';
         const name = document.createElement('h4');
         name.className = 'sre-record-name';
-        name.textContent = `${usuario.nombres} ${usuario.apellidos}`;
+        name.textContent = nameText;
         const state = document.createElement('span');
         state.className = 'sre-badge';
-        state.textContent = usuario.estado || 'Sin estado';
+        state.textContent = item.estado || 'Sin estado';
         top.append(name, state);
 
         const meta = document.createElement('div');
         meta.className = 'sre-record-meta';
-        const identification = document.createElement('span');
-        identification.textContent = `C.C. ${usuario.cedula}`;
-        const role = document.createElement('span');
-        role.textContent = usuario.rol || 'Sin rol';
-        meta.append(identification, role);
+        configuration.meta(item).forEach((value, index) => {
+            const entry = document.createElement('span');
+            entry.textContent = value;
+
+            if (index === 0) {
+                entry.className = 'sre-record-type';
+            }
+
+            meta.append(entry);
+        });
 
         button.append(top, meta);
         record.append(button);
@@ -209,10 +227,37 @@ document.addEventListener('DOMContentLoaded', () => {
         return record;
     };
 
+    const renderDetail = (item) => {
+        detailTitle.textContent = configuration.name(item);
+        const list = document.createElement('dl');
+        list.className = 'sre-detail-list';
+
+        configuration.details(item).forEach(([label, value]) => {
+            const row = document.createElement('div');
+            row.className = 'sre-detail-row';
+
+            const term = document.createElement('dt');
+            term.className = 'sre-detail-label';
+            term.textContent = `${label}:`;
+
+            const description = document.createElement('dd');
+            description.className = 'sre-detail-value';
+            description.textContent = value === null || value === ''
+                ? '???'
+                : String(value);
+
+            row.append(term, description);
+            list.append(row);
+        });
+
+        detail.replaceChildren(list);
+    };
+
     const loadResults = async (reset = false) => {
         if (reset) {
             searchSequence += 1;
             searchController?.abort();
+            detailController?.abort();
             isLoading = false;
             nextCursor = null;
             hasMore = true;
@@ -237,7 +282,9 @@ document.addEventListener('DOMContentLoaded', () => {
             searchUrl.searchParams.set('cursor', nextCursor);
         }
 
-        setResultsStatus(reset ? 'Buscando usuarios...' : 'Cargando más usuarios...');
+        setResultsStatus(reset
+            ? `Buscando ${configuration.plural}...`
+            : `Cargando más ${configuration.plural}...`);
 
         try {
             const response = await fetch(searchUrl, {
@@ -250,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const validationMessage = payload.errors
                     ? Object.values(payload.errors).flat()[0]
                     : null;
-                throw new Error(validationMessage || payload.message || 'No se pudieron cargar los usuarios.');
+                throw new Error(validationMessage || payload.message || `No se pudieron cargar los ${configuration.plural}.`);
             }
 
             if (currentSequence !== searchSequence) {
@@ -259,17 +306,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (reset && payload.data.length === 0) {
                 results.append(createEmptyState(
-                    'No hay usuarios para mostrar',
+                    `No hay ${configuration.plural} para mostrar`,
                     'Prueba con otros filtros de búsqueda.',
                 ));
             } else {
-                payload.data.forEach((usuario) => results.append(renderUserRecord(usuario)));
+                payload.data.forEach((item) => results.append(renderRecord(item)));
             }
 
             nextCursor = payload.next_cursor;
             hasMore = payload.has_more;
             setResultsStatus(hasMore
-                ? 'Desplázate hasta el final para cargar más usuarios.'
+                ? `Desplázate hasta el final para cargar más ${configuration.plural}.`
                 : 'Fin de los resultados.');
 
             if (hasMore && resultsPanel.clientHeight > 0
@@ -279,7 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             if (error.name !== 'AbortError' && currentSequence === searchSequence) {
                 console.error(error);
-                setResultsStatus(error.message || 'Ocurrió un error al buscar usuarios.');
+                setResultsStatus(error.message || `Ocurrió un error al buscar ${configuration.plural}.`);
             }
         } finally {
             if (currentSequence === searchSequence) {
@@ -304,7 +351,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const button = event.target.closest('[data-user-id]');
+        const button = event.target.closest('[data-record-id]');
         if (!(button instanceof HTMLButtonElement)) {
             return;
         }
@@ -315,7 +362,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         button.closest('.sre-record')?.setAttribute('aria-current', 'true');
         button.setAttribute('aria-pressed', 'true');
-        detailTitle.textContent = button.querySelector('.sre-record-name')?.textContent || 'Detalle del usuario';
+        detailTitle.textContent = button.querySelector('.sre-record-name')?.textContent || configuration.detailTitle;
+
+        detailAction?.replaceChildren();
+        const editUrl = button.dataset.editUrl;
+        if (editUrl && detailAction) {
+            const editLink = document.createElement('a');
+            editLink.className = 'sre-button sre-button--secondary sre-button--small';
+            editLink.href = editUrl;
+            editLink.textContent = 'Editar';
+            detailAction.replaceChildren(editLink);
+        }
 
         detailController?.abort();
         detailController = new AbortController();
@@ -323,8 +380,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const detailUrl = searchForm.dataset.detailUrl.replace(
-                '__USER_ID__',
-                encodeURIComponent(button.dataset.userId),
+                '__RECORD_ID__',
+                encodeURIComponent(button.dataset.recordId),
             );
             const response = await fetch(detailUrl, {
                 headers: { Accept: 'application/json' },
@@ -333,7 +390,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const payload = await response.json();
 
             if (!response.ok) {
-                throw new Error(payload.message || 'No se pudo cargar el detalle del usuario.');
+                throw new Error(payload.message || `No se pudo cargar el detalle de ${configuration.plural}.`);
             }
 
             renderDetail(payload.data);
@@ -342,9 +399,60 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error(error);
                 detail.replaceChildren(createEmptyState(
                     'No se pudo cargar el detalle',
-                    error.message || 'Intenta seleccionar el usuario nuevamente.',
+                    error.message || 'Intenta seleccionar el registro nuevamente.',
                 ));
             }
+        }
+    });
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('dialog[data-validation-errors]').forEach((dialog) => {
+        if (dialog instanceof HTMLDialogElement && !dialog.open) {
+            dialog.showModal();
+        }
+    });
+
+    document.querySelectorAll('[data-modal-open]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const modal = document.getElementById(btn.dataset.modalOpen);
+            if (modal instanceof HTMLDialogElement) {
+                modal.showModal();
+            }
+        });
+    });
+
+    document.querySelectorAll('[data-modal-close]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            btn.closest('dialog')?.close();
+        });
+    });
+
+    document.querySelectorAll('[data-user-edit-role]').forEach((roleSelect) => {
+        if (!(roleSelect instanceof HTMLSelectElement)) {
+            return;
+        }
+
+        const form = roleSelect.form;
+        if (!(form instanceof HTMLFormElement)) {
+            return;
+        }
+
+        const updateCommunityRequirements = () => {
+            const isCommunity = roleSelect.value !== '';
+            roleSelect.required = isCommunity;
+            form.querySelectorAll('[data-user-edit-community]').forEach((field) => {
+                field.required = isCommunity;
+            });
+        };
+
+        roleSelect.addEventListener('change', updateCommunityRequirements);
+        updateCommunityRequirements();
+    });
+
+    document.querySelectorAll('[data-resource-search-form]').forEach((searchForm) => {
+        if (searchForm instanceof HTMLFormElement) {
+            setupResourceSearch(searchForm);
         }
     });
 });

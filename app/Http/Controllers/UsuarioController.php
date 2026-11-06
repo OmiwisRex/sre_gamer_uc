@@ -82,6 +82,7 @@ class UsuarioController extends Controller
                     'cedula' => $usuario->cedula,
                     'estado' => $usuario->estado?->nombre,
                     'rol' => $usuario->rol?->nombre,
+                    'edit_url' => url('/usuarios/'.$usuario->id.'/edit'),
                 ])
                 ->values(),
             'next_cursor' => $usuarios->nextCursor()?->encode(),
@@ -121,8 +122,152 @@ class UsuarioController extends Controller
                 'genero' => $usuario->genero?->nombre,
                 'estado' => $usuario->estado?->nombre,
                 'rol' => $usuario->rol?->nombre,
+                'edit_url' => url('/usuarios/'.$usuario->id.'/edit'),
             ],
         ]);
+    }
+
+    public function edit(Usuario $usuario): View
+    {
+        $usuario->load(['rol:id,nombre', 'sesion:id,usuario_id,email']);
+        $isMaster = auth()->user()?->usuario?->rol?->nombre === 'Master';
+
+        $roles = Rol::query()
+            ->where('nombre', '!=', 'Invitado')
+            ->when(! $isMaster, function (EloquentBuilder $query) use ($usuario): void {
+                $query->where(function (EloquentBuilder $query) use ($usuario): void {
+                    $query->whereNotIn('nombre', self::HIDDEN_COMMUNITY_ROLES)
+                        ->when($usuario->rol?->nombre !== 'Invitado', function (EloquentBuilder $query) use ($usuario): void {
+                            $query->orWhereKey($usuario->rol_id);
+                        });
+                });
+            })
+            ->orderByRaw("CASE WHEN nombre = 'Estudiante' THEN 0 ELSE 1 END")
+            ->orderBy('nombre')
+            ->get(['id', 'nombre']);
+
+        return view('usuarios.edit', [
+            'usuario' => $usuario,
+            'estados' => Estado::query()->orderBy('nombre')->get(['id', 'nombre']),
+            'generos' => Genero::query()->orderBy('nombre')->get(['id', 'nombre']),
+            'roles' => $roles,
+            'isGuest' => $usuario->rol?->nombre === 'Invitado',
+            'codigoEditable' => ! str_starts_with((string) $usuario->codigo, 'INV-')
+                && ! str_starts_with((string) $usuario->codigo, 'USR-'),
+        ]);
+    }
+
+    public function update(Request $request, Usuario $usuario): RedirectResponse
+    {
+        $usuario->loadMissing(['rol', 'sesion']);
+        $isMaster = $request->user()?->usuario?->rol?->nombre === 'Master';
+        $isCommunity = $usuario->rol?->nombre !== 'Invitado'
+            || collect(['year_nace', 'genero_id', 'codigo', 'rol_id', 'email'])
+                ->contains(fn (string $field): bool => $request->filled($field));
+
+        $validated = $request->validate([
+            'nombres' => ['required', 'string', 'max:32'],
+            'apellidos' => ['required', 'string', 'max:32'],
+            'cedula' => ['required', 'string', 'max:24', Rule::unique('usuarios', 'cedula')->ignore($usuario)],
+            'estado_id' => ['required', 'integer', 'exists:estados,id'],
+            'year_nace' => [$isCommunity ? 'required' : 'nullable', 'integer', 'between:1900,'.now()->year],
+            'genero_id' => [$isCommunity ? 'required' : 'nullable', 'integer', 'exists:generos,id'],
+            'codigo' => ['nullable', 'string', 'max:24', Rule::unique('usuarios', 'codigo')->ignore($usuario)],
+            'rol_id' => [
+                $isCommunity ? 'required' : 'nullable',
+                'integer',
+                Rule::exists('rols', 'id')->where(function (Builder $query) use ($isMaster, $usuario): void {
+                    $query->where('nombre', '!=', 'Invitado');
+                    if (! $isMaster) {
+                        $query->where(function (Builder $query) use ($usuario): void {
+                            $query->whereNotIn('nombre', self::HIDDEN_COMMUNITY_ROLES)
+                                ->when($usuario->rol?->nombre !== 'Invitado', function (Builder $query) use ($usuario): void {
+                                    $query->orWhere('id', $usuario->rol_id);
+                                });
+                        });
+                    }
+                }),
+            ],
+            'email' => [
+                $isCommunity ? 'required' : 'nullable',
+                'email',
+                'max:128',
+                Rule::unique('sesiones', 'email')->ignore($usuario->sesion?->id),
+            ],
+        ], [
+            'nombres.required' => 'Los nombres son obligatorios.',
+            'apellidos.required' => 'Los apellidos son obligatorios.',
+            'cedula.required' => 'La cédula es obligatoria.',
+            'cedula.unique' => 'Ya existe un usuario con esa cédula.',
+            'estado_id.required' => 'Selecciona un estado.',
+            'year_nace.required' => 'El año de nacimiento es obligatorio para usuarios de la comunidad.',
+            'genero_id.required' => 'Selecciona un género para usuarios de la comunidad.',
+            'rol_id.required' => 'Selecciona un rol para usuarios de la comunidad.',
+            'rol_id.exists' => 'El rol seleccionado no está disponible.',
+            'email.required' => 'El correo electrónico es obligatorio para usuarios de la comunidad.',
+            'email.email' => 'Ingresa un correo electrónico válido.',
+            'email.unique' => 'Ese correo electrónico ya está registrado.',
+        ]);
+
+        $isConvertingGuest = $isCommunity && (
+            $usuario->rol?->nombre === 'Invitado'
+            || $usuario->sesion === null
+            || str_ends_with((string) $usuario->sesion?->email, '@example.invalid')
+        );
+        $temporaryPassword = $isConvertingGuest ? Str::upper(Str::random(6)) : null;
+
+        try {
+            DB::transaction(function () use ($validated, $usuario, $isCommunity, $isConvertingGuest, $temporaryPassword): void {
+                $attributes = [
+                    'nombres' => $validated['nombres'],
+                    'apellidos' => $validated['apellidos'],
+                    'cedula' => $validated['cedula'],
+                    'estado_id' => $validated['estado_id'],
+                ];
+
+                if ($isCommunity) {
+                    $codigo = $validated['codigo'] ?? $usuario->codigo;
+                    if (! filled($codigo) || str_starts_with($codigo, 'INV-')) {
+                        $codigo = 'USR-'.Str::upper(Str::random(20));
+                    }
+
+                    $attributes += [
+                        'year_nace' => $validated['year_nace'],
+                        'genero_id' => $validated['genero_id'],
+                        'codigo' => $codigo,
+                        'rol_id' => $validated['rol_id'],
+                    ];
+                }
+
+                $usuario->update($attributes);
+
+                if ($isCommunity) {
+                    $session = $usuario->sesion;
+                    if ($session === null) {
+                        $session = $usuario->sesion()->make();
+                    }
+                    $session->email = $validated['email'];
+                    if ($isConvertingGuest) {
+                        $session->password = $temporaryPassword;
+                    }
+                    $session->save();
+                }
+
+                if ($isConvertingGuest) {
+                    Mail::to($validated['email'])->send(
+                        new UsuarioAccesoMail($validated['nombres'], $temporaryPassword)
+                    );
+                }
+            });
+        } catch (TransportExceptionInterface $exception) {
+            report($exception);
+
+            return back()
+                ->withInput()
+                ->withErrors(['email' => 'No se pudo enviar el correo. No se actualizaron los datos; verifica la configuración SMTP.']);
+        }
+
+        return to_route('usuarios.index')->with('success', 'El usuario se actualizó correctamente.');
     }
 
     public function create(): View

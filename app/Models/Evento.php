@@ -25,6 +25,11 @@ class Evento extends Model
         return $this->belongsTo(Usuario::class);
     }
 
+    public function estado(): BelongsTo
+    {
+        return $this->belongsTo(Estado::class);
+    }
+
     public function reservas(): HasMany
     {
         return $this->hasMany(Reserva::class);
