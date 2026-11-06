@@ -10,6 +10,12 @@ class CreateDispositivoTest extends TestCase
 {
     use LazilyRefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->signInAsRole();
+    }
+
     public function test_create_form_lists_device_types(): void
     {
         $typeId = DB::table('tipo_dispos')->insertGetId([

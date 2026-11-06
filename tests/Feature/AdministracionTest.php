@@ -11,6 +11,12 @@ class AdministracionTest extends TestCase
 {
     use LazilyRefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->signInAsRole();
+    }
+
     public function test_administration_page_renders_truncated_database_options_and_default_reservation_values(): void
     {
         $estadoId = DB::table('estados')->insertGetId([

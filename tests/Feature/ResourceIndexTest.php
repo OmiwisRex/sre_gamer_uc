@@ -10,6 +10,12 @@ class ResourceIndexTest extends TestCase
 {
     use LazilyRefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->signInAsRole();
+    }
+
     public function test_device_index_lists_types_and_only_states_used_by_devices(): void
     {
         $deviceStateId = $this->createState('Operativo');

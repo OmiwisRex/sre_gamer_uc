@@ -10,6 +10,12 @@ class EventoEditTest extends TestCase
 {
     use LazilyRefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->signInAsRole();
+    }
+
     public function test_edit_form_loads_existing_event_and_linked_devices(): void
     {
         $stateId = $this->createState('Programado');

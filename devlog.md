@@ -75,3 +75,4 @@
 - Om, edición de eventos.
 - Om, cambio de contraseña.
 - Om, revisado el README, para documentación y contexto a la IA.
+- Om, sistema de inicio de sesión, cierre de sesión, recuperación de contraseña y permisos por roles ok.

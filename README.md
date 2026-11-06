@@ -198,6 +198,8 @@ C. **Alertas**: tiene un título "Alertas" y luego un listado con scroll, donde 
 
 A. Cambio de contraseña, donde se pide la antigua y dos veces la nueva, con su botón de enviar.
 
+B. Botón de cerrar sesión.
+
 ### Vistas Reservaciones (views/reservaciones/*)
 
 (para móvil y escritorio)

@@ -14,6 +14,12 @@ class UsuarioEditTest extends TestCase
 {
     use LazilyRefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->signInAsRole();
+    }
+
     public function test_edit_form_loads_existing_user_data_and_related_options(): void
     {
         $stateId = $this->createState('Activo');
@@ -127,19 +133,18 @@ class UsuarioEditTest extends TestCase
         $roleId = $this->createRole('Estudiante');
         $adminRoleId = $this->createRole('Administrador');
         $usuarioId = $this->createUsuario($stateId, $genderId, $roleId);
-        $session = $this->createSession($usuarioId, 'ana@example.test');
+        $this->createSession($usuarioId, 'ana@example.test');
 
-        $this->actingAs($session)
-            ->put(route('usuarios.update', $usuarioId), [
-                'nombres' => 'Ana',
-                'apellidos' => 'Prueba',
-                'cedula' => '123456789',
-                'estado_id' => $stateId,
-                'year_nace' => 2000,
-                'genero_id' => $genderId,
-                'rol_id' => $adminRoleId,
-                'email' => 'ana@example.test',
-            ])
+        $this->put(route('usuarios.update', $usuarioId), [
+            'nombres' => 'Ana',
+            'apellidos' => 'Prueba',
+            'cedula' => '123456789',
+            'estado_id' => $stateId,
+            'year_nace' => 2000,
+            'genero_id' => $genderId,
+            'rol_id' => $adminRoleId,
+            'email' => 'ana@example.test',
+        ])
             ->assertSessionHasErrors([
                 'rol_id' => 'El rol seleccionado no está disponible.',
             ]);

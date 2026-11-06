@@ -12,6 +12,12 @@ class DispositivoEditTest extends TestCase
 {
     use LazilyRefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->signInAsRole();
+    }
+
     public function test_edit_form_loads_existing_device_values_and_available_options(): void
     {
         $typeId = $this->createType('Computador');

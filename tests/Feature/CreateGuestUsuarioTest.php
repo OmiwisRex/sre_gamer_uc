@@ -10,6 +10,12 @@ class CreateGuestUsuarioTest extends TestCase
 {
     use LazilyRefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->signInAsRole();
+    }
+
     public function test_guest_creation_stores_default_profile_and_unique_placeholder_credentials(): void
     {
         $genderId = $this->createGender('Indefinido');

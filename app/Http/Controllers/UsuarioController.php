@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\UsuarioAccesoMail;
 use App\Models\Estado;
 use App\Models\Genero;
 use App\Models\Rol;
+use App\Models\Sesion;
 use App\Models\Usuario;
+use App\Services\UsuarioAccesoService;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\JsonResponse;
@@ -14,7 +15,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -157,7 +157,7 @@ class UsuarioController extends Controller
         ]);
     }
 
-    public function update(Request $request, Usuario $usuario): RedirectResponse
+    public function update(Request $request, Usuario $usuario, UsuarioAccesoService $access): RedirectResponse
     {
         $usuario->loadMissing(['rol', 'sesion']);
         $isMaster = $request->user()?->usuario?->rol?->nombre === 'Master';
@@ -214,10 +214,8 @@ class UsuarioController extends Controller
             || $usuario->sesion === null
             || str_ends_with((string) $usuario->sesion?->email, '@example.invalid')
         );
-        $temporaryPassword = $isConvertingGuest ? Str::upper(Str::random(6)) : null;
-
         try {
-            DB::transaction(function () use ($validated, $usuario, $isCommunity, $isConvertingGuest, $temporaryPassword): void {
+            DB::transaction(function () use ($validated, $usuario, $isCommunity, $isConvertingGuest, $access): void {
                 $attributes = [
                     'nombres' => $validated['nombres'],
                     'apellidos' => $validated['apellidos'],
@@ -248,15 +246,10 @@ class UsuarioController extends Controller
                     }
                     $session->email = $validated['email'];
                     if ($isConvertingGuest) {
-                        $session->password = $temporaryPassword;
+                        $access->sendTemporaryPassword($session, $validated['nombres']);
+                    } else {
+                        $session->save();
                     }
-                    $session->save();
-                }
-
-                if ($isConvertingGuest) {
-                    Mail::to($validated['email'])->send(
-                        new UsuarioAccesoMail($validated['nombres'], $temporaryPassword)
-                    );
                 }
             });
         } catch (TransportExceptionInterface $exception) {
@@ -334,7 +327,7 @@ class UsuarioController extends Controller
         return back()->with('success', 'Invitado creado con éxito.');
     }
 
-    public function storeCommunity(Request $request): RedirectResponse
+    public function storeCommunity(Request $request, UsuarioAccesoService $access): RedirectResponse
     {
         $validated = $request->validate([
             'nombres' => ['required', 'string', 'max:32'],
@@ -371,10 +364,8 @@ class UsuarioController extends Controller
 
         abort_if($activeStateId === null, 500, 'No existe el estado Activo para crear usuarios.');
 
-        $temporaryPassword = Str::upper(Str::random(6));
-
         try {
-            DB::transaction(function () use ($validated, $activeStateId, $temporaryPassword): void {
+            DB::transaction(function () use ($validated, $activeStateId, $access): void {
                 $usuarioId = DB::table('usuarios')->insertGetId([
                     'nombres' => $validated['nombres'],
                     'apellidos' => $validated['apellidos'],
@@ -388,17 +379,11 @@ class UsuarioController extends Controller
                     'updated_at' => now(),
                 ]);
 
-                DB::table('sesiones')->insert([
+                $sesion = new Sesion([
                     'usuario_id' => $usuarioId,
                     'email' => $validated['email'],
-                    'password' => Hash::make($temporaryPassword),
-                    'created_at' => now(),
-                    'updated_at' => now(),
                 ]);
-
-                Mail::to($validated['email'])->send(
-                    new UsuarioAccesoMail($validated['nombres'], $temporaryPassword)
-                );
+                $access->sendTemporaryPassword($sesion, $validated['nombres']);
             });
         } catch (TransportExceptionInterface $exception) {
             report($exception);

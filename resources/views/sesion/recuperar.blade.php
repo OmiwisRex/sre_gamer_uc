@@ -18,12 +18,24 @@
                 <p class="sre-auth-description">Escribe el correo asociado a tu cuenta y te enviaremos una nueva contraseña.</p>
             </div>
 
-            <form class="sre-auth-form">
+            @if (session('success'))
+                <p class="sre-hint" role="status">{{ session('success') }}</p>
+            @endif
+            @if ($errors->any())
+                <ul class="sre-hint" role="alert">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            @endif
+
+            <form class="sre-auth-form" action="{{ route('sesion.recover') }}" method="POST">
+                @csrf
                 <label class="sre-field">
                     <span class="sre-label">Correo electrónico</span>
-                    <input class="sre-input" type="email" name="email" autocomplete="email" placeholder="nombre@dominio.com">
+                    <input class="sre-input" type="email" name="email" value="{{ old('email') }}" autocomplete="email" placeholder="nombre@dominio.com" required>
                 </label>
-                <button class="sre-button sre-auth-submit" type="button">Enviar nueva contraseña</button>
+                <button class="sre-button sre-auth-submit" type="submit">Enviar nueva contraseña</button>
             </form>
 
             <a class="sre-auth-link" href="{{ route('sesion.login') }}">¿Ya tienes cuenta? Volver al inicio de sesión</a>

@@ -54,6 +54,19 @@
                     </div>
                 </form>
             </section>
+
+            <section class="sre-form-section" aria-labelledby="logout-title">
+                <div class="sre-form-section-heading">
+                    <h3 class="sre-form-section-title" id="logout-title">Cerrar sesión</h3>
+                    <p class="sre-hint">Finaliza tu sesión en este dispositivo.</p>
+                </div>
+                <form action="{{ route('sesion.logout') }}" method="POST">
+                    @csrf
+                    <div class="sre-form-actions">
+                        <button class="sre-button" type="submit">Cerrar sesión</button>
+                    </div>
+                </form>
+            </section>
         </div>
     </section>
 @endsection

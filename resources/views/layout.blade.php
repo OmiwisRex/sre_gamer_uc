@@ -9,17 +9,28 @@
 <body class="bg-slate-50 font-institucional text-gris-oscuro">
     @php
         $signedInUser = auth()->user();
+        $profile = $signedInUser?->usuario;
+        $roleName = $profile?->rol?->nombre;
+        $isAdministrator = in_array($roleName, ['Administrador', 'Master'], true);
         $menuItems = [
             ['label' => 'Principal', 'route' => 'index'],
-            ['label' => 'Administración', 'route' => 'administracion.index'],
-            ['label' => 'Usuarios', 'route' => 'usuarios.index'],
-            ['label' => 'Eventos', 'route' => 'eventos.index'],
-            ['label' => 'Dispositivos', 'route' => 'dispositivos.index'],
-            ['label' => 'Observaciones', 'route' => 'observaciones.index'],
-            ['label' => 'Estadísticas', 'route' => 'estadisticas.index'],
-            ['label' => 'Auditorías', 'route' => 'auditorias.index'],
-            ['label' => 'Configuración', 'route' => 'configuracion.index'],
         ];
+        if ($isAdministrator) {
+            $menuItems = array_merge($menuItems, [
+                ['label' => 'Administración', 'route' => 'administracion.index'],
+                ['label' => 'Usuarios', 'route' => 'usuarios.index'],
+                ['label' => 'Eventos', 'route' => 'eventos.index'],
+                ['label' => 'Dispositivos', 'route' => 'dispositivos.index'],
+                ['label' => 'Observaciones', 'route' => 'observaciones.index'],
+                ['label' => 'Estadísticas', 'route' => 'estadisticas.index'],
+                ['label' => 'Auditorías', 'route' => 'auditorias.index'],
+            ]);
+        } elseif ($roleName !== null) {
+            $menuItems[] = ['label' => 'Reservaciones', 'route' => 'reservaciones.index'];
+        }
+        $menuItems = array_merge($menuItems, [
+            ['label' => 'Configuración', 'route' => 'configuracion.index'],
+        ]);
     @endphp
 
     <div class="flex h-screen min-h-[480px] flex-col">
@@ -41,17 +52,17 @@
                 <div class="flex w-60 shrink-0 justify-end self-start pt-1">
                     <div class="flex max-w-full items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5">
                         <div class="flex size-8 shrink-0 items-center justify-center rounded-full bg-azul-medio text-sm font-bold text-white">
-                            {{ mb_substr($signedInUser?->name ?? 'U', 0, 1) }}
+                            {{ mb_substr($profile?->nombres ?? 'U', 0, 1) }}
                         </div>
                         <div class="min-w-0 text-right leading-tight">
                             <p class="m-0 truncate text-sm font-bold text-azul-oscuro">
-                                {{ $signedInUser?->name ?? 'Usuario' }}
+                                {{ trim(($profile?->nombres ?? 'Usuario').' '.($profile?->apellidos ?? '')) }}
                             </p>
                             <p class="m-0 truncate text-xs text-gris-claro">
                                 {{ $signedInUser?->email ?? 'Correo institucional' }}
                             </p>
                             <p class="m-0 text-[0.7rem] font-semibold text-aqua-dos">
-                                {{ $signedInUser?->getAttribute('role') ?? 'Rol' }}
+                                {{ $roleName ?? 'Rol' }}
                             </p>
                         </div>
                     </div>

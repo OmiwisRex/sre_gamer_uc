@@ -10,6 +10,12 @@ class UsersIndexTest extends TestCase
 {
     use LazilyRefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->signInAsRole();
+    }
+
     public function test_index_lists_states_used_by_users_and_excludes_master_role(): void
     {
         $activeStateId = $this->createState('Activo');

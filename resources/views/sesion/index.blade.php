@@ -18,16 +18,28 @@
                 <p class="sre-auth-description">Ingresa tus credenciales para continuar.</p>
             </div>
 
-            <form class="sre-auth-form">
+            @if (session('success'))
+                <p class="sre-hint" role="status">{{ session('success') }}</p>
+            @endif
+            @if ($errors->any())
+                <ul class="sre-hint" role="alert">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            @endif
+
+            <form class="sre-auth-form" action="{{ route('sesion.authenticate') }}" method="POST">
+                @csrf
                 <label class="sre-field">
                     <span class="sre-label">Correo electrónico</span>
-                    <input class="sre-input" type="email" name="email" autocomplete="username" placeholder="nombre@dominio.com">
+                    <input class="sre-input" type="email" name="email" value="{{ old('email') }}" autocomplete="username" placeholder="nombre@dominio.com" required>
                 </label>
                 <label class="sre-field">
                     <span class="sre-label">Contraseña</span>
-                    <input class="sre-input" type="password" name="password" autocomplete="current-password" placeholder="Ingresa tu contraseña">
+                    <input class="sre-input" type="password" name="password" autocomplete="current-password" placeholder="Ingresa tu contraseña" required>
                 </label>
-                <button class="sre-button sre-auth-submit" type="button">Ingresar</button>
+                <button class="sre-button sre-auth-submit" type="submit">Ingresar</button>
             </form>
 
             <a class="sre-auth-link" href="{{ route('sesion.recuperar') }}">¿Olvidaste tu contraseña?</a>

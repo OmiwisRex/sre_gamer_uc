@@ -13,6 +13,12 @@ class CreateCommunityUsuarioTest extends TestCase
 {
     use LazilyRefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->signInAsRole();
+    }
+
     public function test_create_form_lists_gender_and_non_privileged_roles(): void
     {
         $genderId = $this->createGender('Mujer');

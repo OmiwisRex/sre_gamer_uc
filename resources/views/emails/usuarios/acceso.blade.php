@@ -1,11 +1,11 @@
 <x-mail::message>
 # Hola, {{ $nombres }}
 
-Tu cuenta de la comunidad fue creada. Esta es tu contraseña temporal:
+Esta es tu contraseña temporal para acceder a tu cuenta:
 
 **{{ $password }}**
 
-Guárdala de forma segura y no la compartas. Si no solicitaste esta cuenta, contacta al administrador.
+Guárdala de forma segura y no la compartas. Si no esperabas este mensaje, contacta al administrador.
 
 Saludos,<br>
 {{ config('app.name') }}

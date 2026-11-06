@@ -11,6 +11,12 @@ class CreateEventoTest extends TestCase
 {
     use LazilyRefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->signInAsRole();
+    }
+
     public function test_create_form_lists_devices_and_defaults_start_to_current_time(): void
     {
         $activeStateId = $this->createActiveState();
