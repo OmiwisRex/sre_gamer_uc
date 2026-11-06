@@ -1561,3 +1561,26 @@
 .sre-ta-mas {
     min-height: 120px;
 }
+
+/* descripcion usuario */
+
+.sre-detail-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sre-detail-row {
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+}
+
+.sre-detail-label {
+    font-weight: 600;
+    margin: 0;
+}
+
+.sre-detail-value {
+    margin: 0;
+}

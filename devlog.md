@@ -64,3 +64,7 @@
 - Om, controlador para crear usuario, ya sea como invitado o con todos los datos.
 - Om, seeder y configuracion en .env para admin Master.
 - Om, consulta de listado de usuarios con cursor de scroll y detalles de un usuario (falta ajustar presentación).
+
+06/11/2026 Vi:
+
+- Om, ajustada presentación detalles de usuario.

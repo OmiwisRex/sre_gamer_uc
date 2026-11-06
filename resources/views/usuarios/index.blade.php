@@ -80,7 +80,6 @@
                 <div class="sre-panel-heading">
                     <div>
                         <h3 class="sre-detail-title" id="usuario-detail-title" data-user-detail-title>Detalle del usuario</h3>
-                        <p class="sre-detail-subtitle" data-user-detail-subtitle>Selecciona un usuario de los resultados.</p>
                     </div>
                 </div>
                 <div class="sre-panel-content" data-user-detail aria-live="polite">

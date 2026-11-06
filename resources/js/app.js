@@ -90,7 +90,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultsStatus = document.querySelector('[data-user-results-status]');
     const detail = document.querySelector('[data-user-detail]');
     const detailTitle = document.querySelector('[data-user-detail-title]');
-    const detailSubtitle = document.querySelector('[data-user-detail-subtitle]');
 
     if (
         !(resultsPanel instanceof HTMLElement)
@@ -98,7 +97,6 @@ document.addEventListener('DOMContentLoaded', () => {
         || !(resultsStatus instanceof HTMLElement)
         || !(detail instanceof HTMLElement)
         || !(detailTitle instanceof HTMLElement)
-        || !(detailSubtitle instanceof HTMLElement)
     ) {
         return;
     }
@@ -131,7 +129,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const clearDetail = () => {
         detailTitle.textContent = 'Detalle del usuario';
-        detailSubtitle.textContent = 'Selecciona un usuario de los resultados.';
         detail.replaceChildren(createEmptyState(
             'Selecciona un usuario',
             'Su información completa se mostrará en este espacio.',
@@ -140,31 +137,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const renderDetail = (usuario) => {
         detailTitle.textContent = `${usuario.nombres} ${usuario.apellidos}`;
-        detailSubtitle.textContent = 'Información del registro seleccionado.';
 
         const fields = [
             ['Cédula', usuario.cedula],
             ['Código', usuario.codigo],
             ['Edad', usuario.edad],
-            ['Correo electrónico', usuario.email],
+            ['E-Mail', usuario.email],
             ['Género', usuario.genero],
             ['Estado', usuario.estado],
             ['Rol', usuario.rol],
         ];
+
         const list = document.createElement('dl');
-        list.className = 'sre-detail-grid';
+        list.className = 'sre-detail-list';
 
         fields.forEach(([label, value]) => {
             const item = document.createElement('div');
-            item.className = 'sre-detail-item';
+            item.className = 'sre-detail-row';
 
             const term = document.createElement('dt');
             term.className = 'sre-detail-label';
-            term.textContent = label;
+            term.textContent = label + ':';
 
             const description = document.createElement('dd');
             description.className = 'sre-detail-value';
-            description.textContent = value === null || value === '' ? 'No registrado' : String(value);
+            description.textContent = value === null || value === ''
+                ? 'No registrado'
+                : String(value);
 
             item.append(term, description);
             list.append(item);
@@ -317,7 +316,6 @@ document.addEventListener('DOMContentLoaded', () => {
         button.closest('.sre-record')?.setAttribute('aria-current', 'true');
         button.setAttribute('aria-pressed', 'true');
         detailTitle.textContent = button.querySelector('.sre-record-name')?.textContent || 'Detalle del usuario';
-        detailSubtitle.textContent = 'Cargando información del registro seleccionado.';
 
         detailController?.abort();
         detailController = new AbortController();
