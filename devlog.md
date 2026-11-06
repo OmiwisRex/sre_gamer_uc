@@ -74,3 +74,4 @@
 - Om, edición de dispositivos.
 - Om, edición de eventos.
 - Om, cambio de contraseña.
+- Om, revisado el README, para documentación y contexto a la IA.
