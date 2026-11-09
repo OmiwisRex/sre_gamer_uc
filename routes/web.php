@@ -4,6 +4,7 @@ use App\Http\Controllers\AdministracionController;
 use App\Http\Controllers\ConfiguracionController;
 use App\Http\Controllers\DispositivoController;
 use App\Http\Controllers\EventoController;
+use App\Http\Controllers\ObservacionController;
 use App\Http\Controllers\SesionController;
 use App\Http\Controllers\UsuarioController;
 use Illuminate\Support\Facades\Route;
@@ -34,6 +35,8 @@ Route::middleware('auth')->group(function (): void {
 
     Route::middleware('role:Administrador,Master')->group(function (): void {
         Route::get('/adminsala', [AdministracionController::class, 'index'])->name('administracion.index');
+        Route::post('/reservas', [AdministracionController::class, 'storeReservation'])->name('reservas.store');
+        Route::post('/asociaciones', [AdministracionController::class, 'storeAssociation'])->name('asociaciones.store');
         Route::get('/usuarios/create', [UsuarioController::class, 'create'])->name('usuarios.create');
         Route::get('/usuarios/{usuario}/edit', [UsuarioController::class, 'edit'])->name('usuarios.edit');
         Route::put('/usuarios/{usuario}', [UsuarioController::class, 'update'])->name('usuarios.update');
@@ -56,7 +59,10 @@ Route::middleware('auth')->group(function (): void {
         Route::get('/dispositivos/busqueda', [DispositivoController::class, 'search'])->name('dispositivos.search');
         Route::get('/dispositivos/{dispositivo}/detalle', [DispositivoController::class, 'detail'])->name('dispositivos.detail');
         Route::get('/dispositivos', [DispositivoController::class, 'index'])->name('dispositivos.index');
-        Route::view('/observaciones', 'observaciones.index')->name('observaciones.index');
+        Route::post('/observaciones', [ObservacionController::class, 'store'])->name('observaciones.store');
+        Route::get('/observaciones/busqueda', [ObservacionController::class, 'search'])->name('observaciones.search');
+        Route::get('/observaciones/{observacion}/detalle', [ObservacionController::class, 'detail'])->name('observaciones.detail');
+        Route::get('/observaciones', [ObservacionController::class, 'index'])->name('observaciones.index');
         Route::view('/estadisticas', 'estadisticas.index')->name('estadisticas.index');
         Route::view('/auditorias', 'auditorias.index')->name('auditorias.index');
     });

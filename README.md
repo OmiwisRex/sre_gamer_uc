@@ -210,7 +210,58 @@ B. Botón de cerrar sesión.
 
 ## Condiciónes de Servicios
 
-(próximamente...).
+### Administración -> Módulo Jugador
+
+**Busqueda -> Buscar Jugador**:
+
+1. Debe buscarse un solo usuario dada su cédula o código estudiantil, en el pánel de Búsqueda.
+2. Si se halla, mostrar en el pánel de Resultado: rol, estado, nombres + apellidos, email, cédula - código si lo hay (en caso de ser invitado no mostraría email ni código, o si email o código son generados automáticamente al azar, ver regla de generación aleatoria). Si no se halla, fin del servicio.
+3. Luego buscará si existe una **reserva** es decir, que ésta tenga estado en Activo o Bloqueado.
+4. Si la encuentra, mostrará en el componente de Reserva: estado, evento (si lo hay), tipo de dispositivo, fecha y hora de inicio en Am/Pm, duración en minutos, y dos botónes: "Cancelar" y "Asociar" (si estado es Activo) o "Desasociar" (si estado es Bloqueado).
+5. Sino entonces mostrar el forms para crear una nueva reserva, en el componente de Reserva.
+6. Luego buscará si existe una **asociación** es decir, que ésta tenga su estado en Activo o Bloqueado.
+7. Si la encuentra, mostrará en el componente Asociar: estado, evento (si lo hay), dispositivo, fecha y hora de inicio en Am/Pm, cuadro de texto no editable con scroll, con las observaciónes asociadas a esa asociación, si es que las hay, concatenándolas "obs1 - obs2 - obs3" sino no muestra el cuadro. Finalmente muestra un botón "Cerrar" y opcionalmente otro botón "Continuar" (solo si estado es Bloqueado).
+8. Sino entonces mostrar el forms para crear una nueva asociación, en el componente de Asociar. Si hubo una reserva con estado Bloqueado (ítem 4), entonces colocar el id de reservación en el input oculto del forms de la asociación correspondiente. Precargar los inputs del forms con los datos de la reservación: evento si lo hay, lista de dispositivos filtrada según el tipo de dispositivo de la reservación.
+9. En el componente de Horas, buscar para el usuario, las asociacións del día de hoy (con cualquier estado), calcularles sus horas (final - inicio) con 1 decimal, y colocar la lista así, ej: 08:21pm, PC 1, 0.2h (truncando el nombre del dispositivo para que no estire la interfaz).
+10. Al final, abajo del componente de Horas, colocar el total de horas de la lista, con 1 decimal "Total: 3.2 horas".
+
+**Nota**: de aquí en adelante, todos los cambios ejecutados en el Módulo Jugador siempre re cargan la búsqueda de jugador, para actualizar interfaces.
+
+**Reservar -> Crear Reserva**:
+
+1. 
+
+**Reserva -> Cancelar**:
+
+1. Pasa la reservación cargada a estado Eliminado.
+
+**Reserva -> Asociar o Desasociar**:
+
+1. Cambia el estado de la reservación cargada entre Activo y Bloqueado.
+
+**Asociar -> Crear Asociación**:
+
+1. Al ingresar un dispositivo y un evento, puede pasar:
+A. dispositivo sin evento:
+A1. debe verificar si en el momento presente + 30 min
+
+B. dispositivo y evento:
+B1. debe verificar si el evento tiene auto_admin=0, sino dirá que debe asociarse solo al evento y cancela el proceso.
+B2. debe verificar si el evento está actualmente en marcha, sino dirá que no ha empezado y cancela el proceso.
+B3. debe verificar si el dispositivo fué reservado por el evento, sino dice esa inconsistencia y cancela el proceso.
+B4. buscará nombres de usuario con asociaciónes activas (estado Activo o Bloqueado), para el dispositivo y el evento, mostrará ventana emergente con los nombres y horas que llevan en esa asociación, y preguntará si quiere hacer la asociación a pesar de estar ellos ahí.
+B5. buscará para los próximos 30min qué reservaciónes están activas (estado Activo o Bloqueado), para el tipo de dispositivo que coincide con el dispositivo, y para el evento en mira, 
+C. sin dispositivo solo evento:
+C1. debe verificar si el evento está actualmente en marcha, sino dirá que no ha empezado y cancela el proceso.
+D. sin dispositivo ni evento, esto no es posible.
+
+**Asociación -> Cerrar**:
+
+1. Pasa la asociación a estado Eliminado. Si su estado anterior era Activo, actualiza la datetime "final" al momento actual.
+
+**Asociación -> Continuar**:
+
+1. Pasa el estado de la asociación a Activo y actualiza su datetime "final" al momento actual.
 
 ## Instalar en Local
 
@@ -239,6 +290,6 @@ B. Botón de cerrar sesión.
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
 
-Derechos reservados a la Unicatólica Lumen Gentium (Cali, Colombia), empresa dueña del software.
+- Derechos reservados a la Unicatólica Lumen Gentium (Cali, Colombia), empresa dueña del software.

@@ -6,6 +6,13 @@
                 <p class="sre-badge" role="status">{{ session('success') }}</p>
             @endif
         </div>
+        @if ($errors->any())
+            <div class="sre-empty-state" role="alert">
+                @foreach ($errors->all() as $error)
+                    <p>{{ $error }}</p>
+                @endforeach
+            </div>
+        @endif
     </header>
 
     <div class="sre-player-layout">
@@ -17,12 +24,14 @@
 
         <div class="sre-player-operations">
             @include('administracion.comp_reservar', [
+                'jugador' => $jugador ?? null,
                 'reservaActiva' => $reservaActiva ?? null,
                 'tiposDispo' => $tiposDispo ?? collect(),
                 'eventos' => $eventos ?? collect(),
             ])
 
             @include('administracion.comp_asociar', [
+                'jugador' => $jugador ?? null,
                 'asociacionActiva' => $asociacionActiva ?? null,
                 'reservaActiva' => $reservaActiva ?? null,
                 'dispositivos' => $dispositivos ?? collect(),

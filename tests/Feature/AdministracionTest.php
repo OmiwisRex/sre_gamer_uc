@@ -80,7 +80,8 @@ class AdministracionTest extends TestCase
             ->assertSee('name="hora_reserva" value="13:45"', false);
 
         foreach ([30, 60, 90, 120, 150, 180] as $duration) {
-            $response->assertSee('<option value="'.$duration.'">'.$duration.' min</option>', false);
+            $option = '<option value="'.$duration.'"'.($duration === 30 ? ' selected' : '').'>'.$duration.' min</option>';
+            $response->assertSee($option, false);
         }
     }
 
@@ -100,5 +101,369 @@ class AdministracionTest extends TestCase
         $response->assertOk()
             ->assertDontSee('<span class="sre-badge">Reservado</span>', false)
             ->assertSee('<input type="hidden" name="reserva_id" value="">', false);
+    }
+
+    public function test_player_search_by_identification_shows_user_details_and_empty_forms(): void
+    {
+        $stateId = $this->createState('Bloqueado');
+        $userId = $this->createPlayer('123456789', 'ST-123', $stateId, 'Jugador');
+
+        $this->get(route('administracion.index', ['jugador_id' => '123456789']))
+            ->assertOk()
+            ->assertSee('value="123456789"', false)
+            ->assertSee('>Bloqueado</span>', false)
+            ->assertSee('Omar Jordan')
+            ->assertSee('C.C. 123456789')
+            ->assertSee('Código: ST-123')
+            ->assertSee('omar@example.test')
+            ->assertSee('Jugador')
+            ->assertSee('Crear reserva')
+            ->assertSee('Crear asociación')
+            ->assertSee('Sin actividad registrada hoy.')
+            ->assertSee('Total: 0.0 horas');
+    }
+
+    public function test_player_search_by_student_code_loads_active_relations_and_sorted_daily_hours(): void
+    {
+        $this->travelTo(Carbon::parse('2026-03-15 13:45:00'));
+        $activeStateId = $this->createState('Activo');
+        $blockedStateId = $this->createState('Bloqueado');
+        $deletedStateId = $this->createState('Eliminado');
+        $userId = $this->createPlayer('987654321', 'ST-987', $activeStateId, 'Estudiante');
+        $typeId = DB::table('tipo_dispos')->insertGetId([
+            'nombre' => 'Computador',
+            'descripcion' => 'Tipo de prueba',
+        ]);
+        $deviceId = DB::table('dispositivos')->insertGetId([
+            'nombre' => 'Dispositivo Gamer UC Pro',
+            'direccion' => '',
+            'password' => '',
+            'tipo_dispo_id' => $typeId,
+            'estado_id' => $activeStateId,
+            'descripcion' => 'Equipo de prueba',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $this->createReservation($userId, $typeId, $activeStateId, '2026-03-15 15:00:00', 60);
+        $this->createReservation($userId, $typeId, $deletedStateId, '2026-03-15 16:00:00', 90);
+        $this->createAssociation($userId, $deviceId, $activeStateId, '2026-03-15 09:00:00', '2026-03-15 10:00:00');
+        $this->createAssociation($userId, $deviceId, $blockedStateId, '2026-03-15 11:02:00', '2026-03-15 15:02:00');
+        $this->createAssociation($userId, null, $deletedStateId, '2026-03-15 08:00:00', '2026-03-15 08:36:00');
+        $this->createAssociation($userId, $deviceId, $activeStateId, '2026-03-14 23:00:00', '2026-03-15 01:00:00');
+
+        $this->get(route('administracion.index', ['jugador_id' => 'ST-987']))
+            ->assertOk()
+            ->assertSee('>Activo</span>', false)
+            ->assertSee('Reserva')
+            ->assertSee('60 min')
+            ->assertDontSee('90 min')
+            ->assertSee('Bloqueado')
+            ->assertSee('11:02am')
+            ->assertSee('09:00am')
+            ->assertSee('08:00am')
+            ->assertSee('title="Dispositivo Gamer UC Pro">Dispositivo Gamer...</td>', false)
+            ->assertSee('4.0h')
+            ->assertSee('1.0h')
+            ->assertSee('0.6h')
+            ->assertSee('Total: 5.6 horas')
+            ->assertDontSee('11:00pm');
+    }
+
+    public function test_player_search_reports_when_identification_does_not_match(): void
+    {
+        $this->get(route('administracion.index', ['jugador_id' => 'NO-EXISTE']))
+            ->assertOk()
+            ->assertSee('No encontrado')
+            ->assertSee('No se encontró un jugador');
+    }
+
+    public function test_active_association_is_shown_instead_of_the_create_form(): void
+    {
+        $this->travelTo(Carbon::parse('2026-03-15 13:45:00'));
+        $stateId = $this->createState('Activo');
+        $userId = $this->createPlayer('111222333', 'ST-111', $stateId, 'Estudiante', 'otro@example.test');
+        $this->createAssociation($userId, null, $stateId, '2026-03-15 12:00:00', '2026-03-15 13:00:00');
+
+        $this->get(route('administracion.index', ['jugador_id' => 'ST-111']))
+            ->assertOk()
+            ->assertSee('Asociación')
+            ->assertDontSee('Crear asociación')
+            ->assertSee('12:00');
+    }
+
+    public function test_reservation_can_be_created_and_refreshes_the_selected_player(): void
+    {
+        $this->travelTo(Carbon::parse('2026-03-15 13:45:00'));
+        $activeStateId = $this->createState('Activo');
+        $playerId = $this->createPlayer('555111222', 'ST-555', $activeStateId, 'Estudiante');
+        $otherPlayerId = $this->createPlayer('555111223', 'ST-556', $activeStateId, 'Estudiante', 'other@example.test');
+        $typeId = DB::table('tipo_dispos')->insertGetId([
+            'nombre' => 'Computador',
+            'descripcion' => 'Tipo de prueba',
+        ]);
+        $deviceId = DB::table('dispositivos')->insertGetId([
+            'nombre' => 'PC 1',
+            'direccion' => '',
+            'password' => '',
+            'tipo_dispo_id' => $typeId,
+            'estado_id' => $activeStateId,
+            'descripcion' => 'Dispositivo de prueba',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $this->createReservation($otherPlayerId, $typeId, $activeStateId, '2026-03-15 14:30:00', 60);
+        $this->createAssociation($otherPlayerId, $deviceId, $activeStateId, '2026-03-15 14:30:00', '2026-03-15 15:00:00');
+        $eventId = DB::table('eventos')->insertGetId([
+            'nombre' => 'Torneo',
+            'descripcion' => 'Evento de prueba',
+            'usuario_id' => $playerId,
+            'inicio' => '2026-03-15 14:00:00',
+            'duracion_horas' => 1,
+            'aforo' => 1,
+            'estado_id' => $activeStateId,
+            'auto_admin' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->post(route('reservas.store'), [
+            'usuario_id' => $playerId,
+            'tipo_dispo_id' => $typeId,
+            'evento_id' => $eventId,
+            'fecha_reserva' => '2026-03-15',
+            'hora_reserva' => '14:30',
+            'duracion_min' => 60,
+        ]);
+
+        $response->assertRedirect(route('administracion.index', ['jugador_id' => '555111222']))
+            ->assertSessionHas('success', 'Reserva creada correctamente.');
+        $this->assertDatabaseHas('reservas', [
+            'usuario_id' => $playerId,
+            'tipo_dispo_id' => $typeId,
+            'evento_id' => $eventId,
+            'estado_id' => $activeStateId,
+            'inicio' => '2026-03-15 14:30:00',
+            'duracion_min' => 60,
+        ]);
+        $this->assertDatabaseCount('reservas', 2);
+        $this->get(route('administracion.index', ['jugador_id' => '555111222']))
+            ->assertOk()
+            ->assertSee('Reserva')
+            ->assertSee('14:30')
+            ->assertDontSee('Crear reserva');
+    }
+
+    public function test_reservation_start_must_not_be_in_the_past(): void
+    {
+        $this->travelTo(Carbon::parse('2026-03-15 13:45:00'));
+        $activeStateId = $this->createState('Activo');
+        $playerId = $this->createPlayer('555333444', 'ST-5553', $activeStateId, 'Estudiante');
+        $typeId = DB::table('tipo_dispos')->insertGetId([
+            'nombre' => 'Computador',
+            'descripcion' => 'Tipo de prueba',
+        ]);
+
+        $this->from(route('administracion.index', ['jugador_id' => '555333444']))
+            ->post(route('reservas.store'), [
+                'usuario_id' => $playerId,
+                'tipo_dispo_id' => $typeId,
+                'fecha_reserva' => '2026-03-15',
+                'hora_reserva' => '13:44',
+                'duracion_min' => 30,
+            ])
+            ->assertRedirect(route('administracion.index', ['jugador_id' => '555333444']))
+            ->assertSessionHasErrors([
+                'fecha_reserva' => 'La fecha y hora de inicio deben ser actuales o futuras.',
+            ]);
+
+        $this->assertDatabaseMissing('reservas', ['usuario_id' => $playerId]);
+    }
+
+    public function test_player_cannot_have_a_second_active_reservation(): void
+    {
+        $this->travelTo(Carbon::parse('2026-03-15 13:45:00'));
+        $activeStateId = $this->createState('Activo');
+        $playerId = $this->createPlayer('555666777', 'ST-666', $activeStateId, 'Estudiante');
+        $typeId = DB::table('tipo_dispos')->insertGetId([
+            'nombre' => 'Computador',
+            'descripcion' => 'Tipo de prueba',
+        ]);
+        $this->createReservation($playerId, $typeId, $activeStateId, '2026-03-15 14:00:00', 60);
+
+        $this->post(route('reservas.store'), [
+            'usuario_id' => $playerId,
+            'tipo_dispo_id' => $typeId,
+            'fecha_reserva' => '2026-03-15',
+            'hora_reserva' => '15:00',
+            'duracion_min' => 30,
+        ])->assertSessionHasErrors([
+            'usuario_id' => 'El jugador ya tiene una reserva activa.',
+        ]);
+
+        $this->assertDatabaseCount('reservas', 1);
+    }
+
+    public function test_association_can_be_created_with_an_observation_and_deleted_history(): void
+    {
+        $this->travelTo(Carbon::parse('2026-03-15 13:45:00'));
+        $activeStateId = $this->createState('Activo');
+        $deletedStateId = $this->createState('Eliminado');
+        $adminId = $this->createPlayer('100000001', 'ADMIN-1', $activeStateId, 'Administrador');
+        $playerId = $this->createPlayer('555888999', 'ST-888', $activeStateId, 'Estudiante', 'player@example.test');
+        $typeId = DB::table('tipo_dispos')->insertGetId([
+            'nombre' => 'Computador',
+            'descripcion' => 'Tipo de prueba',
+        ]);
+        $deviceId = DB::table('dispositivos')->insertGetId([
+            'nombre' => 'PC 1',
+            'direccion' => '',
+            'password' => '',
+            'tipo_dispo_id' => $typeId,
+            'estado_id' => $activeStateId,
+            'descripcion' => 'Dispositivo de prueba',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $this->createAssociation($playerId, null, $deletedStateId, '2026-03-14 10:00:00', '2026-03-14 10:30:00');
+
+        $response = $this->post(route('asociaciones.store'), [
+            'usuario_id' => $playerId,
+            'dispositivo_id' => $deviceId,
+            'observacion' => 'Gamepad con falla',
+        ]);
+
+        $response->assertRedirect(route('administracion.index', ['jugador_id' => '555888999']))
+            ->assertSessionHas('success', 'Asociación creada correctamente.');
+        $this->assertDatabaseHas('asociaciones', [
+            'usuario_id' => $playerId,
+            'dispositivo_id' => $deviceId,
+            'estado_id' => $activeStateId,
+        ]);
+        $associationId = DB::table('asociaciones')->where('usuario_id', $playerId)->where('estado_id', $activeStateId)->value('id');
+        $this->assertDatabaseHas('observaciones', [
+            'usuario_id' => $adminId,
+            'mensaje' => 'Gamepad con falla',
+            'asociacion_id' => $associationId,
+        ]);
+        $this->get(route('administracion.index', ['jugador_id' => '555888999']))
+            ->assertOk()
+            ->assertSee('Asociación')
+            ->assertSee('PC 1')
+            ->assertDontSee('Crear asociación');
+    }
+
+    public function test_association_cannot_be_created_while_a_previous_association_is_not_deleted(): void
+    {
+        $activeStateId = $this->createState('Activo');
+        $blockedStateId = $this->createState('Bloqueado');
+        $playerId = $this->createPlayer('555000111', 'ST-000', $activeStateId, 'Estudiante');
+        $typeId = DB::table('tipo_dispos')->insertGetId([
+            'nombre' => 'Computador',
+            'descripcion' => 'Tipo de prueba',
+        ]);
+        $deviceId = DB::table('dispositivos')->insertGetId([
+            'nombre' => 'PC 1',
+            'direccion' => '',
+            'password' => '',
+            'tipo_dispo_id' => $typeId,
+            'estado_id' => $activeStateId,
+            'descripcion' => 'Dispositivo de prueba',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $this->createAssociation($playerId, null, $blockedStateId, '2026-03-14 10:00:00', '2026-03-14 10:30:00');
+
+        $this->post(route('asociaciones.store'), [
+            'usuario_id' => $playerId,
+            'dispositivo_id' => $deviceId,
+        ])->assertSessionHasErrors([
+            'usuario_id' => 'El jugador ya tiene una asociación que debe eliminarse antes de crear otra.',
+        ]);
+
+        $this->assertDatabaseCount('asociaciones', 1);
+    }
+
+    private function createState(string $name): int
+    {
+        return DB::table('estados')->insertGetId([
+            'nombre' => $name,
+            'descripcion' => 'Estado de prueba',
+        ]);
+    }
+
+    private function createPlayer(
+        string $cedula,
+        string $codigo,
+        int $stateId,
+        string $roleName,
+        string $email = 'omar@example.test',
+    ): int {
+        $genderId = DB::table('generos')->where('nombre', 'Indefinido')->value('id')
+            ?? DB::table('generos')->insertGetId(['nombre' => 'Indefinido']);
+        $roleId = DB::table('rols')->where('nombre', $roleName)->value('id')
+            ?? DB::table('rols')->insertGetId([
+                'nombre' => $roleName,
+                'descripcion' => 'Rol de prueba',
+            ]);
+        $userId = DB::table('usuarios')->insertGetId([
+            'nombres' => 'Omar',
+            'apellidos' => 'Jordan',
+            'cedula' => $cedula,
+            'codigo' => $codigo,
+            'year_nace' => 2000,
+            'genero_id' => $genderId,
+            'estado_id' => $stateId,
+            'rol_id' => $roleId,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('sesiones')->insert([
+            'usuario_id' => $userId,
+            'email' => $email,
+            'password' => '',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return $userId;
+    }
+
+    private function createReservation(
+        int $userId,
+        int $typeId,
+        int $stateId,
+        string $start,
+        int $duration,
+    ): void {
+        DB::table('reservas')->insert([
+            'usuario_id' => $userId,
+            'tipo_dispo_id' => $typeId,
+            'evento_id' => null,
+            'estado_id' => $stateId,
+            'inicio' => $start,
+            'duracion_min' => $duration,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    private function createAssociation(
+        int $userId,
+        ?int $deviceId,
+        int $stateId,
+        string $start,
+        string $end,
+    ): void {
+        DB::table('asociaciones')->insert([
+            'usuario_id' => $userId,
+            'dispositivo_id' => $deviceId,
+            'evento_id' => null,
+            'reserva_id' => null,
+            'estado_id' => $stateId,
+            'inicio' => $start,
+            'final' => $end,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 }

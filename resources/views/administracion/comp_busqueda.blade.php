@@ -10,18 +10,18 @@
             </header>
 
             <div class="sre-admin-card-body">
-                <form class="sre-search-form" role="search">
+                <form class="sre-search-form" role="search" method="get" action="{{ route('administracion.index') }}">
                     <label class="sre-field">
-                        <span class="sre-label">Cédula / código</span>
+                        <span class="sre-label">Cédula / Código</span>
                         <input
                             class="sre-input"
                             type="search"
                             name="jugador_id"
-                            value="{{ old('jugador_id', isset($jugador) ? $jugador->cedula : '') }}"
+                            value="{{ old('jugador_id', $jugadorId ?? request('jugador_id', $jugador?->cedula)) }}"
                             placeholder="Número de cédula o código"
                         >
                     </label>
-                    <button class="sre-button" type="button">Buscar jugador</button>
+                    <button class="sre-button" type="submit">Buscar jugador</button>
                 </form>
             </div>
         </div>
@@ -30,7 +30,12 @@
             <header class="sre-admin-card-heading">
                 <h5 class="sre-admin-card-title" id="search-result-title">Resultado</h5>
                 @if (isset($jugador) && $jugador)
-                    <span class="sre-badge">{{ $jugador->estado?->nombre ?? 'Encontrado' }}</span>
+                    <div class="sre-admin-actions">
+                        <span class="sre-badge">{{ $jugador->rol?->nombre ?? 'Sin rol' }}</span>
+                        <span class="sre-badge">{{ $jugador->estado?->nombre ?? 'Encontrado' }}</span>
+                    </div>
+                @elseif (filled($jugadorId ?? request('jugador_id')))
+                    <span class="sre-badge sre-badge--neutral">No encontrado</span>
                 @else
                     <span class="sre-badge sre-badge--neutral">Sin consulta</span>
                 @endif
@@ -39,12 +44,16 @@
                 @if (isset($jugador) && $jugador)
                     <div class="sre-player-found">
                         <p class="sre-player-found-name">{{ $jugador->nombres }} {{ $jugador->apellidos }}</p>
-                        <span class="sre-hint">C.C. {{ $jugador->cedula }}</span>
-                        <span class="sre-badge">{{ $jugador->rol?->nombre ?? 'Sin rol' }}</span>
+                        <span class="sre-hint">{{ $jugador->sesion?->email ?? 'Sin correo' }}</span>
+                        @if (filled($jugador->codigo))
+                            <span class="sre-hint">C.C. {{ $jugador->cedula }} - Código: {{ $jugador->codigo }}</span>
+                        @else
+                            <span class="sre-hint">C.C. {{ $jugador->cedula }}</span>
+                        @endif
                     </div>
                 @else
                     <div class="sre-empty-state">
-                        <strong>Sin jugador seleccionado</strong>
+                        <strong>{{ filled($jugadorId ?? request('jugador_id')) ? 'No se encontró un jugador' : 'Sin jugador seleccionado' }}</strong>
                     </div>
                 @endif
             </div>

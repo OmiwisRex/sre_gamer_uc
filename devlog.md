@@ -76,3 +76,7 @@
 - Om, cambio de contraseña.
 - Om, revisado el README, para documentación y contexto a la IA.
 - Om, sistema de inicio de sesión, cierre de sesión, recuperación de contraseña y permisos por roles ok.
+
+09/11/2026 Lu:
+
+- Om, creación y visualización de observaciónes (aún por corregir).

@@ -115,6 +115,25 @@ const resourceSearchConfigurations = {
             ]),
         ],
     },
+    observacion: {
+        plural: 'observaciones',
+        detailTitle: 'Detalle de observación',
+        emptyDetailTitle: 'Selecciona una observación',
+        emptyDetailDescription: 'El mensaje completo y sus datos asociados se mostrarán aquí.',
+        recordClass: 'sre-record sre-observation-record',
+        previewClass: 'sre-observation-preview',
+        name: (record) => record.fecha,
+        state: (record) => record.relacion,
+        meta: (record) => [record.mensaje],
+        details: (record) => [
+            ['Fecha de registro', record.fecha],
+            ['Mensaje', record.mensaje, 'sre-observation-full-message'],
+            ['Administrador', record.administrador],
+            ['Jugador asociado', record.jugador],
+            ['Dispositivo', record.dispositivo],
+            ['Evento', record.evento],
+        ],
+    },
 };
 
 const formatInicio = (fecha) => {
@@ -185,7 +204,7 @@ const setupResourceSearch = (searchForm) => {
     const renderRecord = (item) => {
         const nameText = configuration.name(item);
         const record = document.createElement('article');
-        record.className = 'sre-record';
+        record.className = configuration.recordClass || 'sre-record';
         record.setAttribute('role', 'listitem');
 
         const button = document.createElement('button');
@@ -205,7 +224,9 @@ const setupResourceSearch = (searchForm) => {
         name.textContent = nameText;
         const state = document.createElement('span');
         state.className = 'sre-badge';
-        state.textContent = item.estado || 'Sin estado';
+        state.textContent = configuration.state
+            ? configuration.state(item)
+            : item.estado || 'Sin estado';
         top.append(name, state);
 
         const meta = document.createElement('div');
@@ -213,9 +234,12 @@ const setupResourceSearch = (searchForm) => {
         configuration.meta(item).forEach((value, index) => {
             const entry = document.createElement('span');
             entry.textContent = value;
+            if (configuration.previewClass && index === 0) {
+                entry.className = configuration.previewClass;
+            }
 
             if (index === 0) {
-                entry.className = 'sre-record-type';
+                entry.classList.add('sre-record-type');
             }
 
             meta.append(entry);
@@ -232,7 +256,7 @@ const setupResourceSearch = (searchForm) => {
         const list = document.createElement('dl');
         list.className = 'sre-detail-list';
 
-        configuration.details(item).forEach(([label, value]) => {
+        configuration.details(item).forEach(([label, value, valueClass]) => {
             const row = document.createElement('div');
             row.className = 'sre-detail-row';
 
@@ -242,6 +266,9 @@ const setupResourceSearch = (searchForm) => {
 
             const description = document.createElement('dd');
             description.className = 'sre-detail-value';
+            if (valueClass) {
+                description.classList.add(valueClass);
+            }
             description.textContent = value === null || value === ''
                 ? '???'
                 : String(value);
@@ -454,5 +481,28 @@ document.addEventListener('DOMContentLoaded', () => {
         if (searchForm instanceof HTMLFormElement) {
             setupResourceSearch(searchForm);
         }
+    });
+
+    document.querySelectorAll('[data-observation-form]').forEach((form) => {
+        if (!(form instanceof HTMLFormElement)) {
+            return;
+        }
+
+        const message = form.elements.namedItem('mensaje');
+        if (!(message instanceof HTMLTextAreaElement)) {
+            return;
+        }
+
+        form.addEventListener('submit', (event) => {
+            if (message.value.trim() === '') {
+                event.preventDefault();
+                message.setCustomValidity('El mensaje de la observación es obligatorio.');
+                message.reportValidity();
+            } else {
+                message.setCustomValidity('');
+            }
+        });
+
+        message.addEventListener('input', () => message.setCustomValidity(''));
     });
 });

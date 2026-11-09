@@ -654,14 +654,14 @@
 }
 
 .sre-player-found {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 0.35rem 0.6rem;
+    display: flex;
+    flex-direction: column;
     align-items: center;
+    gap: 0.35rem;
+    text-align: center;
 }
 
 .sre-player-found-name {
-    grid-column: 1 / -1;
     margin: 0;
     color: var(--azul-oscuro);
     font-size: 0.88rem;
@@ -1515,6 +1515,12 @@
 .sre-observation-association {
     grid-column: 2;
     grid-row: 1;
+}
+
+.sre-observation-association .sre-select {
+    max-width: 100%;
+    min-width: 0;
+    text-overflow: ellipsis;
 }
 
 .sre-observation-submit {

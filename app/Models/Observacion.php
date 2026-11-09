@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Observacion extends Model
 {
+    protected $table = 'observaciones';
+
     protected $fillable = [
         'usuario_id',
         'mensaje',
