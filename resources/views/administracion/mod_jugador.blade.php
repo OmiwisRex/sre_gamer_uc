@@ -35,13 +35,15 @@
                 'asociacionActiva' => $asociacionActiva ?? null,
                 'reservaActiva' => $reservaActiva ?? null,
                 'dispositivos' => $dispositivos ?? collect(),
-                'eventos' => $eventos ?? collect(),
+                'eventos' => $eventosAsociacion ?? collect(),
+                'asociacionesCompartidas' => $asociacionesCompartidas ?? collect(),
                 'reserva_id' => $reserva_id ?? null,
             ])
 
             @include('administracion.comp_horas', [
                 'historialAsociaciones' => $historialAsociaciones ?? collect(),
                 'totalHoras' => $totalHoras ?? 0,
+                'hoursRefreshUrl' => $hoursRefreshUrl ?? null,
             ])
         </div>
     </div>

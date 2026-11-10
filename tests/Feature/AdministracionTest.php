@@ -63,7 +63,7 @@ class AdministracionTest extends TestCase
             'duracion_horas' => 1,
             'aforo' => 1,
             'estado_id' => $estadoId,
-            'auto_admin' => true,
+            'auto_admin' => false,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -87,11 +87,34 @@ class AdministracionTest extends TestCase
 
     public function test_association_form_carries_reservation_id_and_shows_reserved_badge_when_provided(): void
     {
-        $response = $this->get(route('administracion.index', ['reserva_id' => 42]));
+        $this->travelTo(Carbon::parse('2026-03-15 13:45:00'));
+        $activeStateId = $this->createState('Activo');
+        $blockedStateId = $this->createState('Bloqueado');
+        $playerId = $this->createPlayer('555123456', 'ST-123', $activeStateId, 'Estudiante');
+        $typeId = DB::table('tipo_dispos')->insertGetId([
+            'nombre' => 'Computador',
+            'descripcion' => 'Tipo de prueba',
+        ]);
+        DB::table('reservas')->insert([
+            'usuario_id' => $playerId,
+            'tipo_dispo_id' => $typeId,
+            'evento_id' => null,
+            'estado_id' => $blockedStateId,
+            'inicio' => '2026-03-15 14:00:00',
+            'duracion_min' => 60,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $reservationId = DB::table('reservas')->where('usuario_id', $playerId)->value('id');
+
+        $response = $this->get(route('administracion.index', [
+            'jugador_id' => '555123456',
+            'reserva_id' => $reservationId,
+        ]));
 
         $response->assertOk()
             ->assertSee('<span class="sre-badge">Reservado</span>', false)
-            ->assertSee('<input type="hidden" name="reserva_id" value="42">', false);
+            ->assertSee('<input type="hidden" name="reserva_id" value="'.$reservationId.'">', false);
     }
 
     public function test_association_form_has_empty_reservation_id_and_no_reserved_badge_when_not_provided(): void
@@ -195,6 +218,8 @@ class AdministracionTest extends TestCase
     {
         $this->travelTo(Carbon::parse('2026-03-15 13:45:00'));
         $activeStateId = $this->createState('Activo');
+        $adminId = $this->createPlayer('100000010', 'ADMIN-10', $activeStateId, 'Administrador', 'admin10@example.test');
+        auth()->user()->forceFill(['usuario_id' => $adminId]);
         $playerId = $this->createPlayer('555111222', 'ST-555', $activeStateId, 'Estudiante');
         $otherPlayerId = $this->createPlayer('555111223', 'ST-556', $activeStateId, 'Estudiante', 'other@example.test');
         $typeId = DB::table('tipo_dispos')->insertGetId([
@@ -221,9 +246,19 @@ class AdministracionTest extends TestCase
             'duracion_horas' => 1,
             'aforo' => 1,
             'estado_id' => $activeStateId,
-            'auto_admin' => true,
+            'auto_admin' => false,
             'created_at' => now(),
             'updated_at' => now(),
+        ]);
+        DB::table('evento_dispos')->insert([
+            'evento_id' => $eventId,
+            'dispositivo_id' => $deviceId,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('acciones')->insertOrIgnore([
+            'nombre' => 'Creó Reserva',
+            'descripcion' => 'Creó una reserva',
         ]);
 
         $response = $this->post(route('reservas.store'), [
@@ -246,10 +281,19 @@ class AdministracionTest extends TestCase
             'duracion_min' => 60,
         ]);
         $this->assertDatabaseCount('reservas', 2);
+        $reservationId = DB::table('reservas')
+            ->where('usuario_id', $playerId)
+            ->where('evento_id', $eventId)
+            ->value('id');
+        $this->assertDatabaseHas('auditorias', [
+            'usuario_id' => $adminId,
+            'tabla' => 'reservas',
+            'indice' => $reservationId,
+        ]);
         $this->get(route('administracion.index', ['jugador_id' => '555111222']))
             ->assertOk()
             ->assertSee('Reserva')
-            ->assertSee('14:30')
+            ->assertSee('02:30 PM')
             ->assertDontSee('Crear reserva');
     }
 
@@ -283,6 +327,8 @@ class AdministracionTest extends TestCase
     {
         $this->travelTo(Carbon::parse('2026-03-15 13:45:00'));
         $activeStateId = $this->createState('Activo');
+        $adminId = $this->createPlayer('100000011', 'ADMIN-11', $activeStateId, 'Administrador', 'admin11@example.test');
+        auth()->user()->forceFill(['usuario_id' => $adminId]);
         $playerId = $this->createPlayer('555666777', 'ST-666', $activeStateId, 'Estudiante');
         $typeId = DB::table('tipo_dispos')->insertGetId([
             'nombre' => 'Computador',
@@ -297,7 +343,7 @@ class AdministracionTest extends TestCase
             'hora_reserva' => '15:00',
             'duracion_min' => 30,
         ])->assertSessionHasErrors([
-            'usuario_id' => 'El jugador ya tiene una reserva activa.',
+            'usuario_id' => 'El jugador ya tiene una reserva activa o bloqueada que debe resolver antes de crear otra.',
         ]);
 
         $this->assertDatabaseCount('reservas', 1);
@@ -309,7 +355,12 @@ class AdministracionTest extends TestCase
         $activeStateId = $this->createState('Activo');
         $deletedStateId = $this->createState('Eliminado');
         $adminId = $this->createPlayer('100000001', 'ADMIN-1', $activeStateId, 'Administrador');
+        auth()->user()->forceFill(['usuario_id' => $adminId]);
         $playerId = $this->createPlayer('555888999', 'ST-888', $activeStateId, 'Estudiante', 'player@example.test');
+        DB::table('acciones')->insert([
+            'nombre' => 'Creó Asociación',
+            'descripcion' => 'Creó una asociación',
+        ]);
         $typeId = DB::table('tipo_dispos')->insertGetId([
             'nombre' => 'Computador',
             'descripcion' => 'Tipo de prueba',
@@ -356,6 +407,8 @@ class AdministracionTest extends TestCase
     {
         $activeStateId = $this->createState('Activo');
         $blockedStateId = $this->createState('Bloqueado');
+        $adminId = $this->createPlayer('100000002', 'ADMIN-2', $activeStateId, 'Administrador', 'admin2@example.test');
+        auth()->user()->forceFill(['usuario_id' => $adminId]);
         $playerId = $this->createPlayer('555000111', 'ST-000', $activeStateId, 'Estudiante');
         $typeId = DB::table('tipo_dispos')->insertGetId([
             'nombre' => 'Computador',
@@ -377,7 +430,7 @@ class AdministracionTest extends TestCase
             'usuario_id' => $playerId,
             'dispositivo_id' => $deviceId,
         ])->assertSessionHasErrors([
-            'usuario_id' => 'El jugador ya tiene una asociación que debe eliminarse antes de crear otra.',
+            'usuario_id' => 'El jugador ya tiene una asociación Activa o Bloqueada que debe resolver antes de crear otra.',
         ]);
 
         $this->assertDatabaseCount('asociaciones', 1);

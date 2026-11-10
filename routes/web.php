@@ -36,7 +36,14 @@ Route::middleware('auth')->group(function (): void {
     Route::middleware('role:Administrador,Master')->group(function (): void {
         Route::get('/adminsala', [AdministracionController::class, 'index'])->name('administracion.index');
         Route::post('/reservas', [AdministracionController::class, 'storeReservation'])->name('reservas.store');
+        Route::post('/reservas/{reserva}/cancelar', [AdministracionController::class, 'cancelReservation'])->name('reservas.cancel');
+        Route::post('/reservas/{reserva}/asociar', [AdministracionController::class, 'beginReservationConversion'])->name('reservas.associate');
+        Route::post('/reservas/{reserva}/desasociar', [AdministracionController::class, 'cancelReservationConversion'])->name('reservas.disassociate');
         Route::post('/asociaciones', [AdministracionController::class, 'storeAssociation'])->name('asociaciones.store');
+        Route::post('/asociaciones/{asociacion}/cerrar', [AdministracionController::class, 'closeAssociation'])->name('asociaciones.close');
+        Route::post('/asociaciones/{asociacion}/continuar', [AdministracionController::class, 'continueAssociation'])->name('asociaciones.continue');
+        Route::post('/administracion/jugadores/{usuario}/horas', [AdministracionController::class, 'refreshPlayerHours'])
+            ->name('administracion.jugadores.horas.refresh');
         Route::get('/usuarios/create', [UsuarioController::class, 'create'])->name('usuarios.create');
         Route::get('/usuarios/{usuario}/edit', [UsuarioController::class, 'edit'])->name('usuarios.edit');
         Route::put('/usuarios/{usuario}', [UsuarioController::class, 'update'])->name('usuarios.update');

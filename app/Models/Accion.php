@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Accion extends Model
 {
+    protected $table = 'acciones';
+
     public $timestamps = false;
 
     protected $fillable = [

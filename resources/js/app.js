@@ -434,6 +434,53 @@ const setupResourceSearch = (searchForm) => {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+    let hoursRefreshInProgress = false;
+    const refreshPlayerHours = async () => {
+        const hoursPanel = document.querySelector('[data-hours-refresh-url]');
+        if (!(hoursPanel instanceof HTMLElement)) {
+            window.clearInterval(hoursRefreshTimer);
+
+            return;
+        }
+
+        if (hoursRefreshInProgress) {
+            return;
+        }
+
+        hoursRefreshInProgress = true;
+        try {
+            const response = await fetch(hoursPanel.dataset.hoursRefreshUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': hoursPanel.dataset.csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    Accept: 'text/html',
+                },
+            });
+            if (!response.ok) {
+                throw new Error(`No se pudieron actualizar las horas (${response.status}).`);
+            }
+
+            const html = await response.text();
+            const refreshedPanel = new DOMParser()
+                .parseFromString(html, 'text/html')
+                .querySelector('#comp-horas');
+            if (!(refreshedPanel instanceof HTMLElement)) {
+                throw new Error('La respuesta de actualización no contiene el componente de horas.');
+            }
+
+            hoursPanel.replaceWith(refreshedPanel);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            hoursRefreshInProgress = false;
+        }
+    };
+    const initialHoursPanel = document.querySelector('[data-hours-refresh-url]');
+    const hoursRefreshTimer = initialHoursPanel instanceof HTMLElement
+        ? window.setInterval(refreshPlayerHours, Number(initialHoursPanel.dataset.refreshInterval) || 5000)
+        : null;
+
     document.querySelectorAll('dialog[data-validation-errors]').forEach((dialog) => {
         if (dialog instanceof HTMLDialogElement && !dialog.open) {
             dialog.showModal();

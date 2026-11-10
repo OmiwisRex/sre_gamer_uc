@@ -31,8 +31,30 @@
                 </div>
             </dl>
             <div class="sre-admin-actions">
-                <button class="sre-button sre-button--muted" type="button">Cancelar</button>
-                <button class="sre-button" type="button">Asociar</button>
+                <form method="POST" action="{{ route('reservas.cancel', $reservaActiva) }}">
+                    @csrf
+                    <button class="sre-button sre-button--muted" type="submit">Cancelar</button>
+                </form>
+                @if ($reservaActiva->estado?->nombre === 'Activo')
+                    @php
+                        $inicioConversion = \Illuminate\Support\Carbon::parse($reservaActiva->inicio, config('app.timezone'));
+                        $ahora = now(config('app.timezone'));
+                        $puedeConvertir = $ahora->gte($inicioConversion->copy()->subMinutes(15))
+                            && $ahora->lte($inicioConversion->copy()->addMinutes(15));
+                    @endphp
+                    <form method="POST" action="{{ route('reservas.associate', $reservaActiva) }}">
+                        @csrf
+                        <button class="sre-button" type="submit" @disabled(! $puedeConvertir)>Asociar</button>
+                    </form>
+                    @unless ($puedeConvertir)
+                        <p class="sre-hint">La conversión estará disponible desde 15 minutos antes hasta 15 minutos después del inicio.</p>
+                    @endunless
+                @else
+                    <form method="POST" action="{{ route('reservas.disassociate', $reservaActiva) }}">
+                        @csrf
+                        <button class="sre-button" type="submit">Desasociar</button>
+                    </form>
+                @endif
             </div>
         </div>
     @else
@@ -82,7 +104,7 @@
                     </label>
                 </div>
                 <div class="sre-admin-actions">
-                    <button class="sre-button" type="submit" @disabled(! $jugador)>Crear reserva</button>
+                    <button class="sre-button" type="submit" @disabled(! $jugador || $jugador->estado?->nombre !== 'Activo')>Crear reserva</button>
                 </div>
             </form>
         </div>

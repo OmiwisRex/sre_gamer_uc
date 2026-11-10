@@ -1,4 +1,13 @@
-<section class="sre-admin-card" aria-labelledby="comp-horas-title">
+<section
+    class="sre-admin-card"
+    id="comp-horas"
+    aria-labelledby="comp-horas-title"
+    @if (! empty($hoursRefreshUrl))
+        data-hours-refresh-url="{{ $hoursRefreshUrl }}"
+        data-csrf-token="{{ csrf_token() }}"
+        data-refresh-interval="5000"
+    @endif
+>
     <header class="sre-admin-card-heading">
         <h4 class="sre-admin-card-title" id="comp-horas-title">Horas de hoy</h4>
     </header>

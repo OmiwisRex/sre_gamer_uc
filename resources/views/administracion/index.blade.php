@@ -19,7 +19,9 @@
                 'totalHoras' => $totalHoras ?? 0,
                 'tiposDispo' => $tiposDispo ?? collect(),
                 'eventos' => $eventos ?? collect(),
+                'eventosAsociacion' => $eventosAsociacion ?? collect(),
                 'dispositivos' => $dispositivos ?? collect(),
+                'asociacionesCompartidas' => $asociacionesCompartidas ?? collect(),
                 'reserva_id' => $reserva_id ?? null,
             ])
 
