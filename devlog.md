@@ -80,3 +80,10 @@
 09/11/2026 Lu:
 
 - Om, creación y visualización de observaciónes (aún por corregir).
+- Om, búsqueda y selección de usuario en Administración.
+- Om, ver horas que ha jugado en el día el usuario.
+- Om, inicios de la creación de asociaciónes y reservas, escritura de lógica en README.
+
+10/11/2026 Ma:
+
+- Om, creación de la lógica general del sistema, actualizado el README con IA.
