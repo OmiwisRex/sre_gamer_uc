@@ -1,5 +1,23 @@
 # SGUC (Sala Gamer Universidad Católica)
 
+## Introducción
+
+Es un sistema de gestión de la sala gamer, para permitir a administradores asignar dispositivos a los jugadores, contar tiempos y hacer una repartición justa de la sala. Además permite crear eventos, reservas y estas últimas pueden ser creadas por los jugadores mismos.
+
+## Generalidades
+
+1. **Asociaciónes** cuando un usuario está en ese momento usando un dispositivo, el cuál puede estar a su vez en un evento opcionalmente, también se puede asociar a un evento sin dispositivo. Varios usuarios pueden estar asociados a un mismo dispositivo por ejemplo para compartirlo. El tiempo en la asociación parte de un inicio y luego se extiende indefinidamente hasta que la misma sea cerrada. Aún así, hay un tiempo mínimo que son 30 minutos o si la asociación se creó a partir de una reservación, esta tendrá su duración mínima respetable.
+
+2. **Reservas** cuando se pide un tipo de dispositivo a futuro, se reserva por tipo debido a que a la hora de asociar, no se quiere quitar a un usuario que esté jugando si hay otro equipo similar disponible. Las reservas tiene mayor prioridad que las asociaciónes, aunque no se pueden crear sobre una asociación en marcha en su tempo mínimo respetable.
+
+3. **Eventos** son máxima prioridad, pudiendo cancelar asociaciónes y reservas, tienen un inicio y final definidos, tienen unos dispositivo vinculados, hay eventos que permiten a los usuarios hacer reservas y asociaciónes internas referenciadas a ellos, otros no, y deben ser gestionados por sus organizadores.
+
+4. **Usuarios** pueden ser administradores, jugadores regulares o invitados que no tienen credenciales de acceso para hacer reservaciónes. Los permisos los define su rol.
+
+5. **Dispositivos** y **Tipos de Dispositivos** son las máquinas que existen en la sala y su agrupación.
+
+6. **Observaciónes** para que los administradores escriban detalles generales o asociados a reservaciónes.
+
 ## Base de Datos
 
 **Nota**, la imágen `MR.png` contiene la DB ya exportada de MySQL en su modelo relacional.
@@ -22,7 +40,7 @@ Los `eventos` son similares a las reservas, pero pudiendo tener un nombre y desc
 
 Luego los eventos tienen `evento_dispos` que son los dispositivos de la sala que están reservados para un evento M:N.
 
-## Consideraciónes
+### Consideraciónes
 
 En la tabla `rols` están los permisos, `RolSeeder.php` los tiene descritos, es importante recalcar que "Invitado" es un usuario sin email o contraseña, "Administrador" tiene permisos básicos de uso de los CRUD y "Master" es un administrador con permisos totales, intocable por los Aministrador's. Los demás son usuarios regulares con permisos entre invitado y administrador.
 
@@ -410,6 +428,12 @@ El servicio registra que un usuario está utilizando la sala. La asociación rep
 **Asociación -> Continuar**:
 
 1. Pasa el estado de la asociación a Activo y actualiza su datetime "final" al momento actual.
+
+### Eventos
+
+**Create -> Crear Evento**:
+
+1. 
 
 ## Instalar en Local
 

@@ -87,3 +87,6 @@
 10/11/2026 Ma:
 
 - Om, creación de la lógica general del sistema, actualizado el README con IA.
+- Om, ya funciona la reservación (compleja lógica interna).
+- Om, ya funciona la asociación (compleja lógica interna).
+- Om, ya se muestra bien la ficha de usuario en administración (asociación, eventos, data, horas).
