@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdministracionController;
+use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\ConfiguracionController;
 use App\Http\Controllers\DispositivoController;
 use App\Http\Controllers\EventoController;
@@ -71,6 +72,7 @@ Route::middleware('auth')->group(function (): void {
         Route::get('/observaciones/{observacion}/detalle', [ObservacionController::class, 'detail'])->name('observaciones.detail');
         Route::get('/observaciones', [ObservacionController::class, 'index'])->name('observaciones.index');
         Route::view('/estadisticas', 'estadisticas.index')->name('estadisticas.index');
-        Route::view('/auditorias', 'auditorias.index')->name('auditorias.index');
+        Route::get('/auditorias/busqueda', [AuditoriaController::class, 'search'])->name('auditorias.search');
+        Route::get('/auditorias', [AuditoriaController::class, 'index'])->name('auditorias.index');
     });
 });

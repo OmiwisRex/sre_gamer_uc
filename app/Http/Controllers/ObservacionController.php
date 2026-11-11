@@ -24,6 +24,7 @@ class ObservacionController extends Controller
                 ->whereDoesntHave('estado', function (Builder $query): void {
                     $query->where('nombre', 'Eliminado');
                 })
+                ->orWhereHas('asociaciones.observaciones')
                 ->orderByDesc('inicio')
                 ->orderByDesc('id')
                 ->get(['id', 'nombre']),
@@ -31,6 +32,7 @@ class ObservacionController extends Controller
                 ->whereHas('estado', function (Builder $query): void {
                     $query->where('nombre', 'Activo');
                 })
+                ->orWhereHas('asociaciones.observaciones')
                 ->orderBy('nombre')
                 ->get(['id', 'nombre']),
             'asociacionesRecientes' => Asociacion::query()
@@ -101,7 +103,7 @@ class ObservacionController extends Controller
             'data' => $observaciones->getCollection()
                 ->map(fn (Observacion $observacion): array => [
                     'id' => $observacion->id,
-                    'fecha' => Carbon::parse($observacion->created_at)->format('d/m/Y H:i'),
+                    'fecha' => Carbon::parse($observacion->created_at)->format('d/m/Y - h:i A'),
                     'mensaje' => $observacion->mensaje,
                     'relacion' => $observacion->asociacion_id ? 'Asociada' : 'General',
                 ])
@@ -124,10 +126,10 @@ class ObservacionController extends Controller
 
         return response()->json([
             'data' => [
-                'fecha' => Carbon::parse($observacion->created_at)->format('d/m/Y H:i'),
+                'fecha' => Carbon::parse($observacion->created_at)->format('d/m/Y - h:i A'),
                 'mensaje' => $observacion->mensaje,
                 'administrador' => trim(($observacion->usuario?->nombres ?? '').' '.($observacion->usuario?->apellidos ?? '')) ?: 'No disponible',
-                'jugador' => trim(($asociacion?->usuario?->nombres ?? '').' '.($asociacion?->usuario?->apellidos ?? '')) ?: 'Sin asociación',
+                'jugador' => trim(($asociacion?->usuario?->nombres ?? '').' '.($asociacion?->usuario?->apellidos ?? '')) ?: 'No aplica',
                 'dispositivo' => $asociacion?->dispositivo?->nombre ?? 'No aplica',
                 'evento' => $asociacion?->evento?->nombre ?? 'No aplica',
             ],

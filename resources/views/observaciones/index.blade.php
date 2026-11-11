@@ -76,6 +76,7 @@
                 action="{{ route('observaciones.index') }}"
                 data-resource-search-form
                 data-resource-type="observacion"
+                data-load-initial
                 data-search-url="{{ route('observaciones.search') }}"
                 data-detail-url="{{ route('observaciones.detail', '__RECORD_ID__') }}"
             >

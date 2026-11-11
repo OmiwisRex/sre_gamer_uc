@@ -1,23 +1,5 @@
 # SGUC (Sala Gamer Universidad Católica)
 
-## Introducción
-
-Es un sistema de gestión de la sala gamer, para permitir a administradores asignar dispositivos a los jugadores, contar tiempos y hacer una repartición justa de la sala. Además permite crear eventos, reservas y estas últimas pueden ser creadas por los jugadores mismos.
-
-## Generalidades
-
-1. **Asociaciónes** cuando un usuario está en ese momento usando un dispositivo, el cuál puede estar a su vez en un evento opcionalmente, también se puede asociar a un evento sin dispositivo. Varios usuarios pueden estar asociados a un mismo dispositivo por ejemplo para compartirlo. El tiempo en la asociación parte de un inicio y luego se extiende indefinidamente hasta que la misma sea cerrada. Aún así, hay un tiempo mínimo que son 30 minutos o si la asociación se creó a partir de una reservación, esta tendrá su duración mínima respetable.
-
-2. **Reservas** cuando se pide un tipo de dispositivo a futuro, se reserva por tipo debido a que a la hora de asociar, no se quiere quitar a un usuario que esté jugando si hay otro equipo similar disponible. Las reservas tiene mayor prioridad que las asociaciónes, aunque no se pueden crear sobre una asociación en marcha en su tempo mínimo respetable.
-
-3. **Eventos** son máxima prioridad, pudiendo cancelar asociaciónes y reservas, tienen un inicio y final definidos, tienen unos dispositivo vinculados, hay eventos que permiten a los usuarios hacer reservas y asociaciónes internas referenciadas a ellos, otros no, y deben ser gestionados por sus organizadores.
-
-4. **Usuarios** pueden ser administradores, jugadores regulares o invitados que no tienen credenciales de acceso para hacer reservaciónes. Los permisos los define su rol.
-
-5. **Dispositivos** y **Tipos de Dispositivos** son las máquinas que existen en la sala y su agrupación.
-
-6. **Observaciónes** para que los administradores escriban detalles generales o asociados a reservaciónes.
-
 ## Base de Datos
 
 **Nota**, la imágen `MR.png` contiene la DB ya exportada de MySQL en su modelo relacional.
@@ -40,7 +22,7 @@ Los `eventos` son similares a las reservas, pero pudiendo tener un nombre y desc
 
 Luego los eventos tienen `evento_dispos` que son los dispositivos de la sala que están reservados para un evento M:N.
 
-### Consideraciónes
+## Consideraciónes
 
 En la tabla `rols` están los permisos, `RolSeeder.php` los tiene descritos, es importante recalcar que "Invitado" es un usuario sin email o contraseña, "Administrador" tiene permisos básicos de uso de los CRUD y "Master" es un administrador con permisos totales, intocable por los Aministrador's. Los demás son usuarios regulares con permisos entre invitado y administrador.
 
@@ -152,11 +134,11 @@ A4. **Horas**: tiene un título "Horas" y luego un listado con scroll, donde se 
 
 B. **Horarios**: se divide en dos espacios, el mayor y a la izquierda B1, y a la derecha de menor tamaño B2.
 
-B1. **Tiempos**: es una rejilla que tiene etiquetas para las filas, asociadas a cada dispositivo (puede crecer en vertical scroll), y etiquetas arriba para las columnas, asociadas a las horas del día, de 1am a 12pm (crece horizontalmente scroll), cada cuadro puede tener o no un botón que indica ocupado, y su color depende de los ítems ahí, sean reservas asociaciónes o eventos. Además hay un selector de fecha y día, así como un indicador vertical de franja horaria actual (puede ser subrrayar celdas).
+B1. **Tiempos**: es una matriz de 48 franjas de 30 minutos que cubren el día completo, desde las 00:00 hasta las 24:00. Las columnas representan las franjas horarias y tienen scroll horizontal. Las filas se agrupan por tipo de dispositivo, con un fondo distintivo para cada fila de tipo, y debajo se muestran sus dispositivos individuales; el conjunto puede crecer con scroll vertical. Las reservas se representan en la fila del tipo de dispositivo porque no tienen una máquina asignada. Las asociaciones se representan en la fila del dispositivo concreto, y los eventos aparecen en las filas de todos los dispositivos que tienen asignados, por lo que un mismo evento puede ocupar varias filas verticales y varias franjas horarias. Cada registro ocupa todas las celdas de 30 minutos con las que se solape. Las reservas normales se indican en azul claro y las reservas vinculadas a un evento en azul oscuro; las asociaciones normales en amarillo y las asociaciones vinculadas a un evento en naranja; los eventos en rojo claro. El número representa la cantidad de registros de esa naturaleza presentes en la celda, contando cada asociación individualmente aunque varias compartan dispositivo. Si coinciden naturalezas distintas, sus indicadores y cantidades deben conservarse por separado, sin sumar eventos, reservas y asociaciones en un único número. Los dispositivos Activos se muestran con su colorimetría normal; los Bloqueados se muestran en gris y sus celdas pasan a gris oscuro cuando tienen asociaciones o eventos. Las asociaciones Eliminadas pueden dejar una sombra morada clara únicamente cuando la celda no contiene otra información; esa sombra no tiene número ni botón. Incluye selector de fecha y un indicador de la columna horaria actual, visible únicamente cuando la fecha seleccionada sea hoy.
 
-B2. **Selección**: con un título "Selección" y una lista vertical con scroll, tiene fichas según la franja horaria seleccionada, cada ficha contiene el nombre del usuario con apellido, la fecha y hora, y la duración en minutos, además las fichas se distinguen en color según sean reservas o asociaciónes o eventos.
+B2. **Selección**: con un título "Selección" y una lista vertical con scroll. Al pulsar una celda de una fila de tipo, lista las reservas de ese tipo que se cruzan con la franja seleccionada; al pulsar una celda de un dispositivo, lista las asociaciones vigentes de ese dispositivo que se cruzan con dicha franja. Cada ficha muestra la información correspondiente del usuario, fecha y hora, duración y, cuando aplique, el evento relacionado. Las fichas distinguen por color las reservas y las asociaciones. Los eventos no se muestran como fichas en este componente. Las sombras moradas de asociaciones Eliminadas tampoco son pulsables ni generan elementos en Selección.
 
-C. **Alertas**: tiene un título "Alertas" y luego un listado con scroll, donde se van colocando las fichas de alerta, cada ficha es pulsable y cuenta con 3 partes: tiempo en minutos para ordenar listado de alertas, nombe del dispositivo si lo hay, nombre del jugador truncado por si es muy largo. También la ficha tendrá un color indicando el tipo de alerta, si es asociación que ha pasado mucho tiempo abierta, o reserva que está por empezar.
+C. **Alertas**: tiene un título "Alertas" y un listado con scroll que se actualiza cíclicamente. Cada ficha es pulsable y muestra los minutos transcurridos desde que se disparó la alerta, el nombre del dispositivo si lo hay y el nombre del jugador truncado si es muy largo. Se muestran alertas por reservas dentro de su ventana de conversión, asociaciones Bloqueadas y asociaciones que alcanzaron su tiempo mínimo de uso respetable. Las más recientes aparecen primero. Al pulsar una ficha, el usuario correspondiente se carga en el módulo Jugador.
 
 ### Vistas Usuarios (views/usuarios/*)
 
@@ -250,6 +232,7 @@ B. Botón de cerrar sesión.
 El servicio crea una reserva para un usuario autenticado. La reserva representa el derecho de disponer de **un dispositivo de un tipo determinado** durante una franja horaria; no es una asociación ni identifica todavía una máquina concreta.
 
 1. **Validar al usuario y sus registros vigentes**:
+   - La operación la puede solicitar un usuario regular autenticado. No está disponible para los roles Administrador ni Master desde la vista de reservaciones.
    - El usuario debe tener estado **Activo**. Un usuario Bloqueado o Eliminado no puede reservar.
    - El usuario no puede tener otra reserva en estado **Activo** o **Bloqueado**, sin importar la fecha de esa reserva. Si ya tiene una, se rechaza la solicitud y se informa que debe cancelar o resolver la reserva existente.
    - El usuario puede tener una asociación vigente y crear una reserva para otro día. No puede crear una reserva para el día calendario actual mientras tenga una asociación vigente en estado Activo o Bloqueado.
@@ -259,7 +242,7 @@ El servicio crea una reserva para un usuario autenticado. La reserva representa 
    - Debe recibirse `tipo_dispo_id`, `inicio`, `duracion_min` y, opcionalmente, `evento_id`.
    - La fecha y hora de inicio no pueden ser anteriores al momento actual. No se permiten reservas retroactivas.
    - La duración debe ser positiva y corresponder a una opción válida del selector de duración del frontend. El backend también debe validarla; no debe confiar únicamente en el selector.
-   - Por ahora no existe un límite máximo de anticipación ni una discretización obligatoria de los minutos de inicio.
+   - Por ahora no existe un límite máximo de anticipación ni una discretización obligatoria de los minutos de inicio. El administrador define la anticipación permitida mediante la configuración operativa, si posteriormente se incorpora.
    - Los horarios de apertura y cierre de la sala no se validan en este servicio porque son externos al sistema. La comunidad debe conocerlos antes de reservar.
    - Calcular `fin_reserva = inicio + duracion_min`. Todos los análisis de disponibilidad deben cubrir la franja completa, no solamente el instante de inicio.
 
@@ -303,8 +286,7 @@ El servicio crea una reserva para un usuario autenticado. La reserva representa 
    - El tiempo transcurrido para la asociación vinculada a una reserva se calcula como `MAX(0, asociaciones.final - reservas.inicio)`. Para una asociación sin reserva se calcula como `asociaciones.final - asociaciones.inicio`.
    - El mínimo aplicable es de 30 minutos para una asociación normal y la duración de la reserva vinculada cuando esta sea superior a 30 minutos. En consecuencia, el umbral aplicable es `MAX(30, reservas.duracion_min)` cuando existe reserva, y 30 minutos cuando no existe.
    - Mientras el tiempo calculado sea inferior al mínimo aplicable, el dispositivo consume capacidad para nuevas reservas. Una vez alcanzado ese mínimo, la asociación puede continuar abierta, pero ya no impide crear reservas por ese motivo. Esto no cierra la asociación ni autoriza a expulsar automáticamente al jugador; los conflictos presenciales los resuelve el administrador.
-   - Las asociaciones Bloqueadas también se consultan. Su `final` no debe actualizarse mientras estén Bloqueadas. Si una asociación Bloqueada todavía no ha completado el mínimo, no se debe asumir que el tiempo restante ha transcurrido: el administrador debe resolverla mediante Continuar o Cerrar.
-   - La fórmula basada en `final` solo refleja correctamente el tiempo activo acumulado mientras no existan pausas. Si una asociación puede pasar varias veces por Bloqueado y luego volver a Activo conservando su `inicio` original, se necesita almacenar el tiempo activo acumulado o registrar los intervalos de pausa. Con solo `inicio`, `final` y `estado_id` no es posible descontar de forma fiable todos los periodos Bloqueados después de reanudarla.
+   - Las asociaciones Bloqueadas también se consultan y siguen vigentes. Su `final` no se actualiza mientras permanezcan Bloqueadas; ese valor conserva el último instante confirmado por la actualización cíclica y sirve como referencia provisional. El bloqueo no se interpreta como una pausa confirmada del jugador: el administrador verifica presencialmente si continúa sentado. Si pulsa Continuar, la asociación vuelve a Activo y las siguientes actualizaciones de `final` incluyen todo el tiempo transcurrido desde el último `final`, suponiendo que el jugador permaneció allí durante el bloqueo. Si pulsa Cerrar mientras sigue Bloqueada, la asociación pasa a Eliminado y conserva el último `final`, sin contar el tiempo posterior a ese instante. No se requiere modificar el esquema de la base de datos para registrar un inicio de bloqueo.
 
 8. **Resultado de disponibilidad**:
    - Si no existe capacidad continua, se rechaza la reserva y se informa el motivo: falta de dispositivos activos, evento que ocupa los dispositivos, reservas que consumen la capacidad o asociaciones aún dentro de su mínimo.
@@ -333,7 +315,7 @@ El servicio crea una reserva para un usuario autenticado. La reserva representa 
 
 **Asociar -> Crear Asociación**:
 
-El servicio registra que un usuario está utilizando la sala. La asociación representa el uso efectivo de un dispositivo o la participación en un evento. No tiene una duración máxima: permanece abierta hasta que el administrador la cierre. El tiempo de uso se acumula mientras su estado sea **Activo**.
+El servicio registra que un usuario está utilizando la sala. La asociación representa el uso efectivo de un dispositivo o la participación en un evento. No tiene una duración máxima: permanece abierta hasta que el administrador la cierre. Mientras la asociación está **Activa**, su campo `final` se actualiza periódicamente. Si pasa a **Bloqueado**, `final` deja de avanzar mientras el administrador comprueba presencialmente si el jugador sigue sentado. El bloqueo no confirma que el jugador haya dejado de jugar ni descuenta automáticamente ese intervalo: al pulsar Continuar, el tiempo transcurrido desde el último `final` se considera parte del uso; al cerrar mientras está Bloqueada, el `final` permanece en el último instante registrado.
 
 1. **Quién puede crearla y validación del usuario**:
    - Solo un usuario con rol **Administrador** o **Master** puede ejecutar este servicio desde el módulo de Administración.
@@ -399,10 +381,10 @@ El servicio registra que un usuario está utilizando la sala. La asociación rep
 8. **Inicio, final y acumulación del tiempo**:
    - Al crear la asociación, `asociaciones.inicio` registra el momento real en que se crea la asociación y `asociaciones.final` se inicializa con ese mismo momento.
    - Mientras la asociación esté **Activa**, un proceso periódico actualiza `asociaciones.final` con el momento actual. Así se mantiene actualizado el tiempo acumulado.
-   - Cuando la asociación pasa a **Bloqueado**, el proceso deja de actualizar `final`. El bloqueo es una pausa administrativa para que el administrador compruebe si el usuario sigue en el dispositivo; no significa que la asociación haya terminado.
-   - Una asociación Bloqueada sigue siendo una asociación vigente y debe aparecer como actividad pendiente de resolución. No debe contabilizar tiempo de uso mientras permanezca Bloqueada.
-   - Al continuar una asociación, se cambia su estado a **Activo** y se actualiza `final` al momento actual. Se conserva el `inicio` original.
-   - Para conservar el `inicio` original y excluir de las estadísticas el tiempo pasado en estado Bloqueado, el servicio necesita un acumulador de tiempo Activo o una tabla de tramos de uso/pausa. El cálculo directo `final - inicio` después de una reactivación incluiría indebidamente el tiempo Bloqueado. Esta información no está representada actualmente en la estructura SQL.
+   - Cuando la asociación pasa a **Bloqueado**, el proceso deja de actualizar `final`. El administrador verifica si el usuario sigue sentado en el dispositivo. El último valor de `final` queda como el instante de referencia del bloqueo; no se crea un nuevo campo ni se altera el esquema SQL.
+   - Una asociación Bloqueada sigue siendo vigente y genera una alerta hasta que el administrador la resuelva. Durante la verificación, el contador visible permanece estático en el último `final`.
+   - Si el administrador pulsa Continuar, se cambia el estado a **Activo** y se actualiza `final` al momento actual. Al conservar `inicio`, el intervalo completo desde el último `final` hasta la reanudación queda incluido en el tiempo total, bajo la suposición de que el usuario permaneció jugando.
+   - Si el administrador pulsa Cerrar mientras la asociación está Bloqueada, pasa a Eliminado y conserva el último `final`; el tiempo posterior al último registro no se cuenta. Si se cierra mientras está Activa, `final` se actualiza al momento del cierre.
    - Las asociaciones no tienen una duración máxima. Pueden permanecer abiertas más allá del mínimo de 30 minutos; superar ese mínimo solo significa que dejan de bloquear capacidad para nuevas reservas, no que la asociación se cierre.
    - **Referencia temporal para el mínimo de bloqueo de capacidad**:
      - Si la asociación no tiene `reserva_id`, el inicio de referencia es `asociaciones.inicio` y el tiempo calculado es `asociaciones.final - asociaciones.inicio`.
@@ -429,11 +411,91 @@ El servicio registra que un usuario está utilizando la sala. La asociación rep
 
 1. Pasa el estado de la asociación a Activo y actualiza su datetime "final" al momento actual.
 
+### Administración -> Módulo Jugador
+
+**Actualización Cíclica**:
+
+1. La interfaz ejecuta un único ciclo mediante un `setInterval` de JavaScript cada 5 segundos mientras el módulo de Administración permanezca abierto. El ciclo actualiza los datos visibles sin recargar la página completa.
+2. La primera operación del ciclo es actualizar `asociaciones.final` al momento actual para todas las asociaciones en estado **Activo** que tengan `dispositivo_id` no nulo. Esta actualización debe ejecutarse antes de consultar el horario y las alertas, para que ambas consultas utilicen los tiempos más recientes. No se actualiza `final` de asociaciones Bloqueadas, Eliminadas ni de asociaciones sin dispositivo.
+3. Si hay un usuario cargado en el módulo Jugador, consultar nuevamente todas sus asociaciones cuya fecha de actividad corresponda al día actual de la sala, sin filtrar por estado. Esto incluye asociaciones Activas, Bloqueadas y Eliminadas del día.
+4. Para cada asociación del listado, calcular el tiempo mostrado como `MAX(0, asociaciones.final - asociaciones.inicio)`, expresado en horas con un decimal. El total es la suma de los tiempos individuales. Este cálculo de horas de juego utiliza el inicio real de la asociación; no debe confundirse con el cálculo del tiempo mínimo de bloqueo de capacidad de una asociación proveniente de reserva, que toma como referencia `reservas.inicio`.
+5. Las asociaciones Activas con dispositivo avanzan porque el primer paso actualiza `final`. Las asociaciones Bloqueadas y Eliminadas permanecen estáticas mientras no cambie su estado o su `final`. Una asociación nueva o cerrada durante el día aparece en la siguiente respuesta del ciclo, sin que el administrador tenga que volver a buscar al usuario.
+6. Si el usuario seleccionado cambia, el siguiente ciclo debe consultar las asociaciones del nuevo usuario. Si no hay usuario seleccionado, se omite únicamente la consulta de sus horas; el resto del ciclo continúa.
+7. El frontend actualiza el listado y el total de horas en el componente A4 sin reconstruir la página ni perder el usuario seleccionado. El ciclo no debe crear temporizadores duplicados ni iniciar otra petición si la petición anterior continúa pendiente. Si una petición falla, se conserva la última información visible y se intenta nuevamente en el siguiente ciclo.
+
+### Administración -> Módulo Horarios
+
+**Tiempos**:
+
+1. El componente representa un día completo, desde las 00:00 hasta las 24:00, en 48 columnas consecutivas de 30 minutos. Las columnas tienen scroll horizontal y las filas scroll vertical.
+2. Las filas se organizan jerárquicamente por `tipo_dispos` y sus `dispositivos`. La fila del tipo tiene un fondo distintivo y funciona como agrupador de los dispositivos que pertenecen a ese tipo.
+3. Las **reservas** se representan en la fila del tipo de dispositivo, nunca en una fila de máquina concreta, porque `reservas` solo almacena `tipo_dispo_id` y no asigna un `dispositivo_id`. Las reservas en estado Activo o Bloqueado se cuentan en cada franja de 30 minutos con la que se solape su intervalo `[inicio, inicio + duracion_min)`.
+4. Las **asociaciones** se representan en la fila del dispositivo indicado por `dispositivo_id`. Las asociaciones en estado Activo o Bloqueado se cuentan en cada franja que se solape con `[inicio, final)`. Cada registro de asociación cuenta por separado; por tanto, si cuatro usuarios están asociados a la misma consola durante una franja, el contador de asociaciones de esa celda será cuatro.
+5. Los **eventos** se representan en cada fila de dispositivo incluido en `evento_dispos`. Cada evento ocupa todas las franjas de su intervalo `[inicio, inicio + duracion_horas)` y todas las filas de sus dispositivos asignados. Por eso, un mismo evento puede ocupar varias celdas horizontales y varias filas verticales. Se cuentan los eventos que se solapan con cada celda.
+6. Un elemento ocupa todas las celdas de 30 minutos que intersequen con su intervalo, aunque solo cubra una parte de la franja. Los intervalos se interpretan como `[inicio, fin)`: si un elemento termina exactamente al comienzo de una celda, no ocupa esa celda.
+7. La colorimetría de las celdas es:
+   - Reserva general: azul claro, con la cantidad de reservas.
+   - Reserva vinculada a un evento: azul oscuro, con la cantidad de reservas de evento.
+   - Asociación sin evento: amarillo, con la cantidad de asociaciones.
+   - Asociación vinculada a un evento: naranja, con la cantidad de asociaciones del evento.
+   - Evento asignado al dispositivo: rojo claro, con la cantidad de eventos.
+   - Asociación Eliminada: sombra morada clara, únicamente cuando la celda no contiene ninguna otra información. La sombra no muestra número ni botón y no se incluye en Selección.
+8. Cuando en una misma celda coincidan elementos de naturalezas distintas, el servicio debe entregar sus cantidades por separado. El frontend debe conservar los indicadores y colores de cada naturaleza dentro de la celda, sin sumar reservas, asociaciones y eventos en un único contador.
+9. Los dispositivos **Activos** se muestran con la colorimetría normal. Los dispositivos **Bloqueados** se muestran en gris, como no disponibles; si tienen una asociación o un evento en una franja, esa celda se representa en gris oscuro. Los dispositivos Eliminados no forman parte del listado operativo normal.
+10. Las asociaciones sin `dispositivo_id` (asociaciones vinculadas únicamente a un evento) no se atribuyen a una máquina concreta y no generan ocupación en ninguna fila física. El evento relacionado sí aparece en las filas de los dispositivos que tenga asignados.
+11. Cada celda con información operativa presenta un botón con sus indicadores y cantidades. Las celdas vacías no presentan botón. La sombra morada de asociaciones Eliminadas es solo visual y tampoco es pulsable.
+12. El selector permite cambiar la fecha y consultar días futuros o pasados. La columna correspondiente a la hora actual se resalta únicamente cuando la fecha seleccionada sea el día actual de la sala.
+13. El horario se vuelve a consultar en cada actualización cíclica de 5 segundos, después de actualizar `final` de las asociaciones Activas con dispositivo. También se consulta al entrar al módulo o al cambiar la fecha seleccionada.
+14. Las filas de tipo y de dispositivo tienen significados distintos: al seleccionar una celda de tipo se consultan reservas del tipo; al seleccionar una celda de dispositivo se consultan asociaciones de ese dispositivo. No se debe inventar una asignación física de reserva, ya que la base de datos no la conserva.
+
+**Selección**:
+
+1. Al pulsar una celda de una fila de tipo, consultar las reservas en estado Activo o Bloqueado de ese `tipo_dispo_id` cuyo intervalo se cruce con la franja seleccionada.
+2. Al pulsar una celda de dispositivo, consultar las asociaciones en estado Activo o Bloqueado de ese `dispositivo_id` cuyo intervalo `[inicio, final)` se cruce con la franja seleccionada.
+3. Las fichas muestran los datos necesarios para identificar al usuario y el registro: nombre y apellido, fecha y hora, duración, dispositivo o tipo de dispositivo y evento relacionado cuando aplique. Las fichas de reservas se distinguen en azul claro o azul oscuro según sean generales o vinculadas a un evento; las asociaciones se distinguen en amarillo o naranja según estén vinculadas a un evento.
+4. Los eventos no se muestran como fichas en Selección, aunque sí ocupan visualmente las celdas de sus dispositivos en Tiempos. Las asociaciones Eliminadas tampoco se listan: únicamente pueden dejar la sombra morada no interactiva descrita en Tiempos.
+5. La lista corresponde exclusivamente a la fila y franja pulsadas. Las reservas se consultan por tipo; las asociaciones, por dispositivo. No se asigna artificialmente una reserva a una de las máquinas de su tipo.
+6. Al cambiar la fecha, seleccionar otra celda o actualizarse el horario, la selección debe corresponder a la celda vigente. Si deja de existir la celda o cambia la fila/fecha seleccionada, se limpia o reconstruye la lista para evitar mostrar información de otra franja.
+
+### Administración -> Módulo Alertas
+
+**Actualización Cíclica**:
+
+1. La lista se consulta y actualiza en cada ciclo de 5 segundos. La actualización ocurre después de refrescar `final` de las asociaciones Activas que tengan dispositivo.
+2. Se generan únicamente las siguientes clases de alerta:
+   - **Reserva en ventana de conversión**: reserva en estado Activo cuya hora actual esté entre 15 minutos antes y 15 minutos después de `reservas.inicio`. La alerta desaparece cuando la reserva pasa a Bloqueado para convertirse, pasa a Eliminado o sale de la ventana. Una reserva Bloqueada no genera esta alerta.
+   - **Asociación Bloqueada**: asociación en estado Bloqueado. La alerta aparece desde el instante de bloqueo y permanece hasta que el administrador la continúe o la cierre. El instante de disparo se toma de `asociaciones.final`, que conserva el último instante actualizado antes del bloqueo. No se agrega un campo nuevo ni se modifica la base de datos para registrar el bloqueo.
+   - **Asociación que superó el tiempo mínimo respetable**: asociación en estado Activo con `dispositivo_id` no nulo que alcanzó su umbral mínimo. Para una asociación sin reserva, el umbral es 30 minutos desde `asociaciones.inicio`. Para una asociación con `reserva_id`, el umbral es `MAX(30, reservas.duracion_min)` contado desde `reservas.inicio`. El instante de disparo es el inicio de referencia más dicho umbral. Las asociaciones sin dispositivo no generan esta alerta.
+3. Una asociación Bloqueada genera solamente su alerta de bloqueo, nunca además una alerta por superar el mínimo. Una asociación Eliminada no genera alertas. Una asociación Activa que ya superó el mínimo conserva una sola alerta de exceso, no una ficha nueva en cada ciclo.
+4. La antigüedad de cada alerta se calcula en minutos desde su instante de disparo, usando minutos completos transcurridos. Para reservas se usa `reservas.inicio - 15 minutos`; para asociaciones Bloqueadas se usa el último `asociaciones.final`; para asociaciones que superaron el mínimo se usa el instante exacto en que alcanzaron el umbral descrito.
+5. Las alertas se ordenan desde la más reciente hasta la más antigua, es decir, menor cantidad de minutos de existencia primero. Si varias tienen la misma antigüedad, se conserva un orden estable, por ejemplo por tipo y llave primaria.
+6. Cada ficha muestra la antigüedad en minutos, el nombre del dispositivo si existe y el nombre del usuario truncado si es necesario. La apariencia o color de la ficha debe permitir distinguir si corresponde a reserva, asociación Bloqueada o exceso del tiempo mínimo.
+7. Al pulsar una ficha, se carga su `usuario_id` en el módulo Jugador y se ejecuta la búsqueda/actualización normal de ese usuario. No se navega fuera del módulo ni se recarga la página completa.
+8. Si una alerta deja de cumplir sus condiciones, debe desaparecer en el siguiente ciclo. La lista no debe duplicar alertas de una misma reserva o asociación.
+9. Las alertas son una herramienta de intervención del administrador presencial. No cancelan reservas, no cierran asociaciones y no expulsan usuarios automáticamente.
+
 ### Eventos
 
 **Create -> Crear Evento**:
 
-1. 
+1. El servicio solo permite crear eventos a un usuario autorizado para administrar eventos. El registro nuevo queda en estado **Activo**.
+2. Deben recibirse `nombre`, `descripcion`, `usuario_id` del organizador, `inicio`, `duracion_horas`, `aforo`, `auto_admin` y la lista de `dispositivo_id` que integrarán el evento.
+3. **Validar los datos**:
+   - El nombre debe ser único.
+   - El organizador debe existir y estar en estado Activo.
+   - `inicio` debe ser posterior al momento actual; no se permiten eventos retroactivos ni que comiencen en el instante actual.
+   - `duracion_horas` y `aforo` deben ser mayores que cero.
+   - `auto_admin` debe tener un valor booleano válido.
+   - El evento debe tener al menos un dispositivo.
+   - Todos los dispositivos seleccionados deben existir, estar en estado Activo y no repetirse en la lista enviada.
+4. **Calcular el intervalo del evento**: `fin = inicio + duracion_horas`. El intervalo se interpreta como `[inicio, fin)`, de modo que dos eventos consecutivos pueden tocarse en el límite sin colisionar.
+5. **Buscar colisiones únicamente con eventos Activos**. Un evento existente colisiona si su intervalo se solapa con el nuevo y comparte al menos un `dispositivo_id`. La colisión se determina por la intersección entre los dispositivos nuevos y los registrados en `evento_dispos` para los eventos existentes.
+6. Si existe una colisión, rechazar la creación e informar los nombres de los dispositivos concretos que producen el conflicto. No basta con informar que hay un evento en el mismo horario.
+7. Si los horarios se solapan, pero los eventos utilizan conjuntos de dispositivos completamente distintos, permitir la creación.
+8. Los eventos Bloqueados o Eliminados no participan en la validación de colisiones.
+9. **No comprobar ni rechazar por reservas o asociaciones existentes**. El evento tiene prioridad sobre ambas. Su creación no debe mostrar advertencias por esos registros ni eliminarlos, bloquearlos o cambiarles el estado automáticamente. La resolución posterior de esos conflictos corresponde al administrador presencial.
+10. Al aprobarse la validación, crear el registro en `eventos` y sus relaciones en `evento_dispos` dentro de una transacción. Si falla la creación de cualquiera de las relaciones, revertir la operación completa para no dejar un evento con una asignación parcial de dispositivos.
+11. La comprobación de colisiones y la inserción deben ejecutarse con bloqueo transaccional consistente sobre los dispositivos seleccionados, para evitar que dos solicitudes administrativas concurrentes creen eventos incompatibles sobre una misma máquina. La existencia de un solo administrador habitual reduce la concurrencia administrativa, pero no elimina la necesidad de proteger la integridad frente a solicitudes simultáneas.
 
 ## Instalar en Local
 

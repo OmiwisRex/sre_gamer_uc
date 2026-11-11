@@ -58,7 +58,7 @@ class EventoController extends Controller
                     'nombre' => $evento->nombre,
                     'estado' => $evento->estado?->nombre,
                     'inicio' => $evento->inicio
-                        ? Carbon::parse($evento->inicio)->format('d/m/Y H:i')
+                        ? Carbon::parse($evento->inicio)->format('d/m/Y - h:i A')
                         : null,
                     'aforo' => $evento->aforo,
                     'edit_url' => url('/eventos/'.$evento->id.'/edit'),
@@ -83,7 +83,7 @@ class EventoController extends Controller
                 'descripcion' => $evento->descripcion,
                 'organizador' => trim(($evento->usuario?->nombres ?? '').' '.($evento->usuario?->apellidos ?? '')) ?: null,
                 'inicio' => $evento->inicio
-                    ? Carbon::parse($evento->inicio)->format('d/m/Y H:i')
+                    ? Carbon::parse($evento->inicio)->format('d/m/Y - h:i A')
                     : null,
                 'duracion' => $evento->duracion_horas.' horas',
                 'aforo' => $evento->aforo.' personas',

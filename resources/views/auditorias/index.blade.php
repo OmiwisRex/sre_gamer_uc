@@ -14,18 +14,20 @@
             <div class="sre-panel-heading">
                 <div>
                     <h3 class="sre-panel-title" id="auditorias-list-title">Registro de auditoría</h3>
-                    <p class="sre-hint">Los eventos se generan automáticamente al utilizar los servicios.</p>
+                    <p class="sre-hint">Consulta los registros de auditoría disponibles.</p>
                 </div>
             </div>
 
-            <form class="sre-filter-form" method="get" action="{{ route('auditorias.index') }}">
+            <form class="sre-filter-form" method="get" action="{{ route('auditorias.index') }}"
+                data-resource-search-form data-resource-type="auditoria"
+                data-search-url="{{ route('auditorias.search') }}" data-load-initial>
                 <div class="sre-audit-filters">
                     <label class="sre-field">
-                        <span class="sre-label">Cédula del administrador</span>
+                        <span class="sre-label">Cédula del usuario</span>
                         <input class="sre-input" type="search" name="cedula" value="{{ request('cedula') }}" placeholder="Identificación">
                     </label>
                     <label class="sre-field">
-                        <span class="sre-label">Nombre del administrador</span>
+                        <span class="sre-label">Nombre del usuario</span>
                         <input class="sre-input" type="search" name="nombre" value="{{ request('nombre') }}" placeholder="Nombre o apellido">
                     </label>
                     <label class="sre-field">
@@ -58,7 +60,7 @@
                 </div>
             </form>
 
-            <div class="sre-audit-table-wrap">
+            <div class="sre-audit-table-wrap" data-resource-scroll>
                 <table class="sre-audit-table">
                     <thead>
                         <tr>
@@ -66,33 +68,14 @@
                             <th scope="col">Acción</th>
                             <th scope="col">Tabla</th>
                             <th scope="col">Índice</th>
-                            <th scope="col">Administrador</th>
+                            <th scope="col">Usuario</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        @forelse (($auditorias ?? collect()) as $auditoria)
-                            <tr>
-                                <td data-label="Fecha y hora">{{ \Illuminate\Support\Carbon::parse($auditoria->created_at)->format('d/m/Y H:i') }}</td>
-                                <td data-label="Acción">{{ $auditoria->accion?->nombre ?? 'Sin acción' }}</td>
-                                <td data-label="Tabla"><span class="sre-audit-table-name">{{ $auditoria->tabla }}</span></td>
-                                <td data-label="Índice">{{ $auditoria->indice }}</td>
-                                <td data-label="Usuario responsable">
-                                    <span class="sre-audit-user">{{ trim(($auditoria->usuario?->nombres ?? '') . ' ' . ($auditoria->usuario?->apellidos ?? '')) ?: 'No disponible' }}</span>
-                                    <span class="sre-audit-user-id">C.C. {{ $auditoria->usuario?->cedula ?? '—' }}</span>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr class="sre-audit-empty-row">
-                                <td colspan="5">
-                                    <div class="sre-empty-state">
-                                        <strong>No hay auditorías para mostrar</strong>
-                                        <span>Los registros aparecerán aquí cuando estén disponibles.</span>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
+                    <tbody data-resource-results></tbody>
                 </table>
+                <div class="sre-empty-state" data-resource-results-status role="status" aria-live="polite">
+                    <strong>No hay auditorías para mostrar</strong>
+                </div>
             </div>
         </section>
     </section>

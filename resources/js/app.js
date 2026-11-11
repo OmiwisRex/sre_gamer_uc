@@ -126,13 +126,46 @@ const resourceSearchConfigurations = {
         state: (record) => record.relacion,
         meta: (record) => [record.mensaje],
         details: (record) => [
-            ['Fecha de registro', record.fecha],
-            ['Mensaje', record.mensaje, 'sre-observation-full-message'],
+            ['Fecha y Hora', record.fecha],
             ['Administrador', record.administrador],
-            ['Jugador asociado', record.jugador],
+            ['Jugador Asociado', record.jugador],
             ['Dispositivo', record.dispositivo],
             ['Evento', record.evento],
+            ['Mensaje', record.mensaje, 'sre-observation-full-message'],
         ],
+    },
+    auditoria: {
+        plural: 'auditorías',
+        renderRecord: (item) => {
+            const row = document.createElement('tr');
+            [
+                ['Fecha y hora', item.fecha],
+                ['Acción', item.accion],
+                ['Tabla', item.tabla],
+                ['Índice', item.indice],
+                ['Usuario responsable', item.usuario],
+            ].forEach(([label, value], index) => {
+                const cell = document.createElement('td');
+                cell.dataset.label = label;
+                if (index === 2 || index === 4) {
+                    const text = document.createElement('span');
+                    text.className = index === 2 ? 'sre-audit-table-name' : 'sre-audit-user';
+                    text.textContent = value;
+                    cell.append(text);
+                    if (index === 4 && item.cedula) {
+                        const identification = document.createElement('span');
+                        identification.className = 'sre-audit-user-id';
+                        identification.textContent = `C.C. ${item.cedula}`;
+                        cell.append(identification);
+                    }
+                } else {
+                    cell.textContent = value;
+                }
+                row.append(cell);
+            });
+
+            return row;
+        },
     },
 };
 
@@ -162,20 +195,20 @@ const createEmptyState = (title, description) => {
 
 const setupResourceSearch = (searchForm) => {
     const configuration = resourceSearchConfigurations[searchForm.dataset.resourceType];
-    const resultsPanel = searchForm.closest('.sre-resource-sidebar')?.querySelector('.sre-panel-content');
-    const results = searchForm.closest('.sre-resource-layout')?.querySelector('[data-resource-results]');
-    const resultsStatus = searchForm.closest('.sre-resource-layout')?.querySelector('[data-resource-results-status]');
-    const detail = searchForm.closest('.sre-resource-layout')?.querySelector('[data-resource-detail]');
-    const detailTitle = searchForm.closest('.sre-resource-layout')?.querySelector('[data-resource-detail-title]');
-    const detailAction = searchForm.closest('.sre-resource-layout')?.querySelector('[data-resource-detail-action]');
+    const page = searchForm.closest('.sre-page');
+    const results = page?.querySelector('[data-resource-results]');
+    const resultsPanel = results?.closest('[data-resource-scroll], .sre-panel-content');
+    const resultsStatus = page?.querySelector('[data-resource-results-status]');
+    const detail = page?.querySelector('[data-resource-detail]');
+    const detailTitle = page?.querySelector('[data-resource-detail-title]');
+    const detailAction = page?.querySelector('[data-resource-detail-action]');
 
     if (
         !configuration
         || !(resultsPanel instanceof HTMLElement)
         || !(results instanceof HTMLElement)
         || !(resultsStatus instanceof HTMLElement)
-        || !(detail instanceof HTMLElement)
-        || !(detailTitle instanceof HTMLElement)
+        || (configuration.details && (!(detail instanceof HTMLElement) || !(detailTitle instanceof HTMLElement)))
     ) {
         return;
     }
@@ -186,6 +219,7 @@ const setupResourceSearch = (searchForm) => {
     let searchSequence = 0;
     let searchController = null;
     let detailController = null;
+    let activeFilters = new URLSearchParams();
 
     const setResultsStatus = (message) => {
         resultsStatus.className = 'sre-hint';
@@ -193,6 +227,9 @@ const setupResourceSearch = (searchForm) => {
     };
 
     const clearDetail = () => {
+        if (!configuration.details) {
+            return;
+        }
         detailTitle.textContent = configuration.detailTitle;
         detailAction?.replaceChildren();
         detail.replaceChildren(createEmptyState(
@@ -202,6 +239,9 @@ const setupResourceSearch = (searchForm) => {
     };
 
     const renderRecord = (item) => {
+        if (configuration.renderRecord) {
+            return configuration.renderRecord(item);
+        }
         const nameText = configuration.name(item);
         const record = document.createElement('article');
         record.className = configuration.recordClass || 'sre-record';
@@ -290,6 +330,12 @@ const setupResourceSearch = (searchForm) => {
             hasMore = true;
             results.replaceChildren();
             clearDetail();
+            activeFilters = new URLSearchParams();
+            new FormData(searchForm).forEach((value, key) => {
+                if (typeof value === 'string' && value.trim() !== '') {
+                    activeFilters.set(key, value.trim());
+                }
+            });
         }
 
         if (isLoading || !hasMore) {
@@ -300,11 +346,7 @@ const setupResourceSearch = (searchForm) => {
         const currentSequence = searchSequence;
         searchController = new AbortController();
         const searchUrl = new URL(searchForm.dataset.searchUrl, window.location.origin);
-        new FormData(searchForm).forEach((value, key) => {
-            if (typeof value === 'string' && value.trim() !== '') {
-                searchUrl.searchParams.set(key, value.trim());
-            }
-        });
+        searchUrl.search = activeFilters.toString();
         if (nextCursor) {
             searchUrl.searchParams.set('cursor', nextCursor);
         }
@@ -332,19 +374,18 @@ const setupResourceSearch = (searchForm) => {
             }
 
             if (reset && payload.data.length === 0) {
-                results.append(createEmptyState(
-                    `No hay ${configuration.plural} para mostrar`,
-                    'Prueba con otros filtros de búsqueda.',
-                ));
+                setResultsStatus(`No hay ${configuration.plural} para mostrar. Prueba con otros filtros de búsqueda.`);
             } else {
                 payload.data.forEach((item) => results.append(renderRecord(item)));
             }
 
             nextCursor = payload.next_cursor;
             hasMore = payload.has_more;
-            setResultsStatus(hasMore
-                ? `Desplázate hasta el final para cargar más ${configuration.plural}.`
-                : 'Fin de los resultados.');
+            if (payload.data.length > 0) {
+                setResultsStatus(hasMore
+                    ? `Desplázate hasta el final para cargar más ${configuration.plural}.`
+                    : 'Fin de los resultados.');
+            }
 
             if (hasMore && resultsPanel.clientHeight > 0
                 && resultsPanel.scrollHeight <= resultsPanel.clientHeight + 1) {
@@ -374,6 +415,9 @@ const setupResourceSearch = (searchForm) => {
     });
 
     results.addEventListener('click', async (event) => {
+        if (!configuration.details) {
+            return;
+        }
         if (!(event.target instanceof Element)) {
             return;
         }
@@ -431,6 +475,10 @@ const setupResourceSearch = (searchForm) => {
             }
         }
     });
+
+    if (searchForm.hasAttribute('data-load-initial')) {
+        loadResults(true);
+    }
 };
 
 document.addEventListener('DOMContentLoaded', () => {

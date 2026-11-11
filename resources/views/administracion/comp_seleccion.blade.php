@@ -14,7 +14,7 @@
                     {{ trim(($usuarioItem?->nombres ?? '') . ' ' . ($usuarioItem?->apellidos ?? '')) ?: ($item->nombre ?? 'Elemento de horario') }}
                 </h5>
                 <div class="sre-selection-meta">
-                    <span>{{ isset($item->inicio) ? \Illuminate\Support\Carbon::parse($item->inicio)->format('d/m/Y H:i') : 'Sin fecha' }}</span>
+                    <span>{{ isset($item->inicio) ? \Illuminate\Support\Carbon::parse($item->inicio)->format('d/m/Y - h:i A') : 'Sin fecha' }}</span>
                     <span>{{ $item->duracion_min ?? '—' }} min</span>
                     <span>{{ $tipoItem === 'association' ? 'Asociación' : ($tipoItem === 'event' ? 'Evento' : 'Reserva') }}</span>
                 </div>

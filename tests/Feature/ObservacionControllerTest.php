@@ -115,6 +115,74 @@ class ObservacionControllerTest extends TestCase
             ->assertJsonPath('has_more', false);
     }
 
+    public function test_index_includes_historical_devices_and_events_with_observations(): void
+    {
+        $active = $this->createState('Activo');
+        $deleted = $this->createState('Eliminado');
+        $admin = $this->createUser('ADMIN-HISTORY', 'Ana', 'Admin');
+        $player = $this->createUser('PLAYER-HISTORY', 'Omar', 'Jordan');
+        $device = $this->createDevice('Equipo histórico', $this->createDeviceType('Computador'), $deleted);
+        $event = $this->createEvent('Evento histórico', $deleted, $admin, '2026-03-10 10:00:00');
+        $association = $this->createAssociation($player, $device, $event, $active, '2026-03-10 10:00:00');
+        $this->createObservation($admin, 'Observación histórica', $association, '2026-03-10 11:00:00');
+
+        $this->get(route('observaciones.index'))
+            ->assertOk()
+            ->assertSee('Equipo histórico')
+            ->assertSee('Evento histórico')
+            ->assertSee('data-resource-search-form', false)
+            ->assertSee('data-resource-results', false)
+            ->assertSee('data-resource-detail', false);
+    }
+
+    public function test_search_without_filters_and_detail_without_association(): void
+    {
+        $admin = $this->createUser('ADMIN-GENERAL', 'Ana', 'Admin');
+        $observation = $this->createObservation($admin, 'Mensaje general', null, '2026-03-10 11:00:00');
+
+        $this->getJson(route('observaciones.search', [
+            'admin_cedula' => '', 'usuario_cedula' => '', 'evento_id' => '', 'dispositivo_id' => '',
+            'fecha' => '', 'con_asociacion' => '',
+        ]))->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $observation);
+
+        $this->getJson(route('observaciones.detail', $observation))
+            ->assertOk()->assertJsonPath('data.mensaje', 'Mensaje general')
+            ->assertJsonPath('data.administrador', 'Ana Admin')
+            ->assertJsonPath('data.jugador', 'Sin asociación')
+            ->assertJsonPath('data.dispositivo', 'No aplica')
+            ->assertJsonPath('data.evento', 'No aplica');
+    }
+
+    public function test_each_observation_filter_excludes_nonmatching_records(): void
+    {
+        $state = $this->createState('Activo');
+        $admin = $this->createUser('ADMIN-MATCH', 'Ana', 'Admin');
+        $otherAdmin = $this->createUser('ADMIN-OTHER', 'Luis', 'Admin');
+        $player = $this->createUser('PLAYER-MATCH', 'Omar', 'Jordan', 'CODE-MATCH');
+        $otherPlayer = $this->createUser('PLAYER-OTHER', 'Luz', 'Prueba');
+        $type = $this->createDeviceType('Computador');
+        $device = $this->createDevice('PC 1', $type, $state);
+        $otherDevice = $this->createDevice('PC 2', $type, $state);
+        $event = $this->createEvent('Torneo', $state, $admin, '2026-03-10 10:00:00');
+        $otherEvent = $this->createEvent('Otro torneo', $state, $admin, '2026-03-11 10:00:00');
+        $association = $this->createAssociation($player, $device, $event, $state, '2026-03-10 10:00:00');
+        $otherAssociation = $this->createAssociation($otherPlayer, $otherDevice, $otherEvent, $state, '2026-03-11 10:00:00');
+        $matching = $this->createObservation($admin, 'Coincide', $association, '2026-03-10 11:00:00');
+        $this->createObservation($otherAdmin, 'No coincide', $otherAssociation, '2026-03-11 11:00:00');
+
+        foreach ([
+            ['admin_cedula' => 'ADMIN-MATCH'],
+            ['usuario_cedula' => 'CODE-MATCH'],
+            ['usuario_cedula' => 'PLAYER-MATCH'],
+            ['evento_id' => $event],
+            ['dispositivo_id' => $device],
+            ['fecha' => '2026-03-10'],
+        ] as $filter) {
+            $this->getJson(route('observaciones.search', $filter))
+                ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $matching);
+        }
+    }
+
     public function test_detail_returns_observation_and_associated_people_event_and_device(): void
     {
         $this->travelTo(Carbon::parse('2026-03-10 12:00:00'));

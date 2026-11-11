@@ -90,3 +90,10 @@
 - Om, ya funciona la reservación (compleja lógica interna).
 - Om, ya funciona la asociación (compleja lógica interna).
 - Om, ya se muestra bien la ficha de usuario en administración (asociación, eventos, data, horas).
+
+11/11/2026 Mi:
+
+- Om, creación de casos de prueba generales usando IA.
+- Om, redactada lógica del calendario y lógica faltante en el README.
+- Om, ya funciona bien la búsqueda de auditorías.
+- Om, ya funciona bien la búsqueda de observaciónes.
