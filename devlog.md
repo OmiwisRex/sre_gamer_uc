@@ -103,3 +103,6 @@
 
 - Om, ya funciona la lógica compleja al crear evento y al actualizarlo con edición.
 - Om, organizados muchos errores menores.
+- Om, ya funciona la observación del calendario diario de asociaciónes, reservaciónes y eventos.
+- Om, ya funciona la lista de ítems seleccionados en el calendario.
+- Om, creada la relación de colores para el calendario, falta ajustarlos.
