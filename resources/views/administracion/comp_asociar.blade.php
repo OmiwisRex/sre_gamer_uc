@@ -33,7 +33,7 @@
                 </div>
                 <div class="sre-detail-item sre-detail-item--wide">
                     <dt class="sre-detail-label">Inicio</dt>
-                    <dd class="sre-detail-value">{{ \Illuminate\Support\Carbon::parse($asociacionActiva->inicio)->format('d/m/Y - h:i A') }}</dd>
+                    <dd class="sre-detail-value">{{ formatDateTime($asociacionActiva->inicio) }}</dd>
                 </div>
             </dl>
             @if ($jugadoresCompartiendo->isNotEmpty())

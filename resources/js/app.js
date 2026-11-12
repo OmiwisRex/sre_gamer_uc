@@ -3,6 +3,7 @@ import 'bootstrap';
 
 import '../css/app.css';
 import './schedule.js';
+import { formatDateTimeWithPeriod } from './dateFormatter.js';
 
 document.addEventListener('click', (event) => {
     if (!(event.target instanceof Element)) {
@@ -171,13 +172,7 @@ const resourceSearchConfigurations = {
 };
 
 const formatInicio = (fecha) => {
-    const [date, time] = fecha.split(' ');
-    let [hours, minutes] = time.split(':').map(Number);
-
-    const periodo = hours >= 12 ? 'pm' : 'am';
-    hours = hours % 12 || 12;
-
-    return `${date} ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} ${periodo}`;
+    return formatDateTimeWithPeriod(fecha);
 };
 
 const createEmptyState = (title, description) => {

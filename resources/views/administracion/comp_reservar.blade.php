@@ -23,7 +23,7 @@
                 </div>
                 <div class="sre-detail-item">
                     <dt class="sre-detail-label">Inicio</dt>
-                    <dd class="sre-detail-value">{{ \Illuminate\Support\Carbon::parse($reservaActiva->inicio)->format('d/m/Y - h:i A') }}</dd>
+                    <dd class="sre-detail-value">{{ formatDateTime($reservaActiva->inicio) }}</dd>
                 </div>
                 <div class="sre-detail-item">
                     <dt class="sre-detail-label">Duración</dt>

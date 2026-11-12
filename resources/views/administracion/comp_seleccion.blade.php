@@ -19,7 +19,7 @@
             >
                 <h5 class="sre-selection-name">{{ $item['nombre'] ?? 'Elemento de horario' }}</h5>
                 <div class="sre-selection-meta">
-                    <span>{{ isset($item['inicio']) ? \Illuminate\Support\Carbon::parse($item['inicio'])->format('d/m/Y - h:i A') : 'Sin fecha' }}</span>
+                    <span>{{ isset($item['inicio']) ? formatDateTime($item['inicio']) : 'Sin fecha' }}</span>
                     <span>{{ $item['duracion_min'] ?? '—' }} min</span>
                     <span>{{ in_array($tipoItem, ['association', 'association-event']) ? 'Asociación' : 'Reserva' }}</span>
                 </div>

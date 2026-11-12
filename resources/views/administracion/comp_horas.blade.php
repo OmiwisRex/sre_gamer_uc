@@ -26,7 +26,7 @@
                 <tbody>
                     @forelse (($historialAsociaciones ?? collect()) as $asociacion)
                         <tr>
-                            <td>{{ \Illuminate\Support\Carbon::parse($asociacion->inicio)->format('h:ia') }}</td>
+                            <td>{{ formatTimeCompact($asociacion->inicio) }}</td>
                             <td title="{{ $asociacion->dispositivo?->nombre ?? 'Sin dispositivo' }}">{{ \Illuminate\Support\Str::limit($asociacion->dispositivo?->nombre ?? 'Sin dispositivo', 18) }}</td>
                             <td>{{ number_format((float) ($asociacion->horas ?? 0), 1) }}h</td>
                         </tr>

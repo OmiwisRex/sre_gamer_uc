@@ -48,7 +48,7 @@
                             @php
                                 $nombreAsociado = trim(($asociacion->usuario?->nombres ?? '') . ' ' . ($asociacion->usuario?->apellidos ?? ''));
                                 $detalleAsociacion = $asociacion->dispositivo?->nombre ?? $asociacion->evento?->nombre ?? 'Sin dispositivo';
-                                $opcionAsociacion = \Illuminate\Support\Carbon::parse($asociacion->inicio)->format('h:ia')
+                                $opcionAsociacion = formatTimeCompact($asociacion->inicio)
                                     . '-' . $detalleAsociacion
                                     . '-' . ($nombreAsociado ?: 'Jugador');
                             @endphp

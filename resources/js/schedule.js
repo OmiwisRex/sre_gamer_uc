@@ -1,3 +1,5 @@
+import { formatDateTimeWithPeriod } from './dateFormatter.js';
+
 document.addEventListener('DOMContentLoaded', () => {
     let scheduleUpdateInProgress = false;
     let scheduleUpdateTimer = null;
@@ -147,16 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let html = '';
         for (let item of items) {
             const tipoClase = item.tipo.includes('association') ? 'association' : 'reservation';
-            const fecha = new Date(item.inicio);
-            const formattedDate = fecha.toLocaleDateString('es-CO', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-            }) + ' - ' + fecha.toLocaleTimeString('es-CO', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true,
-            });
+            const formattedDate = formatDateTimeWithPeriod(item.inicio);
 
             html += `
                 <button
