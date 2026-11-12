@@ -106,7 +106,8 @@ class ResourceIndexTest extends TestCase
         $otherStateId = $this->createState('Cancelado');
         $organizerId = $this->createUser('CC-123456', $activeStateId);
         $otherOrganizerId = $this->createUser('CC-987654', $activeStateId);
-        $laterEventId = $this->createEvent('Torneo tarde', $activeStateId, $organizerId, '2026-02-02 10:00:00');
+        $laterEventId = $this->createEvent('Torneo tarde', $activeStateId, $organizerId, '2026-02-02 12:30:00');
+        $sameTimeEventId = $this->createEvent('Torneo misma hora', $activeStateId, $organizerId, '2026-02-02 12:30:00');
         $earlierEventId = $this->createEvent('Torneo temprano', $activeStateId, $organizerId, '2026-02-01 10:00:00');
         $this->createEvent('Otro organizador', $activeStateId, $otherOrganizerId, '2026-01-01 10:00:00');
         $this->createEvent('Cancelado', $otherStateId, $organizerId, '2026-01-02 10:00:00');
@@ -116,17 +117,26 @@ class ResourceIndexTest extends TestCase
             'estado_id' => $activeStateId,
         ]))
             ->assertOk()
-            ->assertJsonPath('data.0.id', $earlierEventId)
-            ->assertJsonPath('data.0.inicio', '01/02/2026 10:00')
+            ->assertJsonPath('data.0.id', $sameTimeEventId)
+            ->assertJsonPath('data.0.inicio', '02/02/2026 - 12:30 PM')
             ->assertJsonPath('has_more', true);
 
-        $this->getJson(route('eventos.search', [
+        $secondPage = $this->getJson(route('eventos.search', [
             'usuario_cedula' => '123456',
             'estado_id' => $activeStateId,
             'cursor' => $firstPage->json('next_cursor'),
         ]))
             ->assertOk()
             ->assertJsonPath('data.0.id', $laterEventId)
+            ->assertJsonPath('has_more', true);
+
+        $this->getJson(route('eventos.search', [
+            'usuario_cedula' => '123456',
+            'estado_id' => $activeStateId,
+            'cursor' => $secondPage->json('next_cursor'),
+        ]))
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $earlierEventId)
             ->assertJsonPath('has_more', false);
     }
 
@@ -143,12 +153,19 @@ class ResourceIndexTest extends TestCase
             ->assertJsonPath('data.nombre', 'Torneo')
             ->assertJsonPath('data.descripcion', 'Descripción de prueba')
             ->assertJsonPath('data.organizador', 'Usuario Prueba')
-            ->assertJsonPath('data.inicio', '01/02/2026 10:00')
+            ->assertJsonPath('data.inicio', '01/02/2026 - 10:00 AM')
             ->assertJsonPath('data.duracion', '2 horas')
             ->assertJsonPath('data.aforo', '30 personas')
             ->assertJsonPath('data.estado', 'Programado')
             ->assertJsonPath('data.administracion', 'Auto administrado')
             ->assertJsonPath('data.dispositivos.0', 'PC Gamer 01');
+    }
+
+    public function test_resource_indexes_enable_initial_search(): void
+    {
+        foreach (['usuarios.index', 'dispositivos.index', 'eventos.index'] as $route) {
+            $this->get(route($route))->assertOk()->assertSee('data-load-initial', false);
+        }
     }
 
     private function createState(string $name): int
@@ -188,11 +205,13 @@ class ResourceIndexTest extends TestCase
 
     private function createUser(string $cedula, int $stateId): int
     {
-        $genderId = DB::table('generos')->insertGetId(['nombre' => 'Indefinido']);
-        $roleId = DB::table('rols')->insertGetId([
-            'nombre' => 'Estudiante',
-            'descripcion' => 'Rol de prueba',
-        ]);
+        $genderId = DB::table('generos')->where('nombre', 'Indefinido')->value('id')
+            ?? DB::table('generos')->insertGetId(['nombre' => 'Indefinido']);
+        $roleId = DB::table('rols')->where('nombre', 'Estudiante')->value('id')
+            ?? DB::table('rols')->insertGetId([
+                'nombre' => 'Estudiante',
+                'descripcion' => 'Rol de prueba',
+            ]);
 
         return DB::table('usuarios')->insertGetId([
             'nombres' => 'Usuario',

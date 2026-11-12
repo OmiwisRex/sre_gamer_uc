@@ -64,6 +64,7 @@
                             <span class="sre-hint">{{ $message }}</span>
                         @enderror
                     </label>
+                    <p class="sre-hint">El estado Bloqueado refiere a un usuario limitado o castigado</p>
                 </div>
             </section>
 

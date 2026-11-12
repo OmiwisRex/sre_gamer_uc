@@ -15,9 +15,10 @@ class CreateEventoTest extends TestCase
     {
         parent::setUp();
         $this->signInAsRole();
+        $this->travelTo('2026-03-15 12:00:00');
     }
 
-    public function test_create_form_lists_devices_and_defaults_start_to_current_time(): void
+    public function test_create_form_lists_devices_and_defaults_start_to_next_minute(): void
     {
         $activeStateId = $this->createActiveState();
         $deviceId = $this->createDevice($activeStateId);
@@ -31,7 +32,7 @@ class CreateEventoTest extends TestCase
             ->assertSee('placeholder="Horas" required', false)
             ->assertSee('name="aforo" value="" min="1" step="1"', false)
             ->assertSee('placeholder="Cantidad de invitados" required', false)
-            ->assertSee('name="inicio" value="2026-03-15T13:45"', false)
+            ->assertSee('name="inicio" value="2026-03-15T13:46"', false)
             ->assertSee('name="dispositivos[]" value="'.$deviceId.'"', false)
             ->assertSee('PC Gamer 01');
     }
@@ -138,6 +139,84 @@ class CreateEventoTest extends TestCase
         $this->assertDatabaseCount('eventos', 0);
     }
 
+    public function test_collisions_are_checked_by_device_and_half_open_interval(): void
+    {
+        $active = $this->createActiveState();
+        $organizer = $this->createUser('123456789', $active);
+        $firstDevice = $this->createDevice($active);
+        $secondDevice = $this->createDevice($active, 'PC Gamer 02');
+        $event = DB::table('eventos')->insertGetId([
+            'nombre' => 'Existente', 'descripcion' => '', 'usuario_id' => $organizer,
+            'inicio' => '2026-03-15 14:00:00', 'duracion_horas' => 2, 'aforo' => 10,
+            'estado_id' => $active, 'auto_admin' => true, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        DB::table('evento_dispos')->insert(['evento_id' => $event, 'dispositivo_id' => $firstDevice]);
+        $payload = [
+            'nombre' => 'Nuevo', 'organizador_cedula' => '123456789', 'inicio' => '2026-03-15T15:00',
+            'duracion_horas' => 2, 'aforo' => 10, 'auto_admin' => '1',
+            'dispositivos' => [$firstDevice, $secondDevice],
+        ];
+
+        $this->post(route('eventos.store'), $payload)->assertSessionHasErrors([
+            'dispositivos' => 'Los siguientes dispositivos tienen un conflicto de horario: PC Gamer 01.',
+        ]);
+        $this->assertDatabaseCount('eventos', 1);
+        $this->post(route('eventos.store'), [...$payload, 'dispositivos' => [$secondDevice]])
+            ->assertSessionHasNoErrors();
+        $this->post(route('eventos.store'), [...$payload, 'nombre' => 'Consecutivo', 'inicio' => '2026-03-15T16:00', 'dispositivos' => [$firstDevice]])
+            ->assertSessionHasNoErrors();
+        $this->post(route('eventos.store'), [...$payload, 'nombre' => 'Anterior', 'inicio' => '2026-03-15T13:00', 'duracion_horas' => 1, 'dispositivos' => [$firstDevice]])
+            ->assertSessionHasNoErrors();
+    }
+
+    public function test_event_requires_future_start_active_organizer_and_active_unique_devices(): void
+    {
+        $active = $this->createActiveState();
+        $blocked = DB::table('estados')->insertGetId(['nombre' => 'Bloqueado', 'descripcion' => '']);
+        $organizer = $this->createUser('123456789', $blocked);
+        $device = $this->createDevice($blocked);
+        $payload = [
+            'nombre' => 'Nuevo', 'organizador_cedula' => '123456789', 'inicio' => '2026-03-15T12:00',
+            'duracion_horas' => 1, 'aforo' => 1, 'auto_admin' => '1', 'dispositivos' => [$device],
+        ];
+        $this->post(route('eventos.store'), $payload)->assertSessionHasErrors(['usuario_id', 'inicio']);
+        DB::table('usuarios')->where('id', $organizer)->update(['estado_id' => $active]);
+        $payload['inicio'] = '2026-03-15T13:00';
+        $this->post(route('eventos.store'), $payload)->assertSessionHasErrors(['dispositivos']);
+        $this->post(route('eventos.store'), [...$payload, 'dispositivos' => []])->assertSessionHasErrors(['dispositivos']);
+        $this->post(route('eventos.store'), [...$payload, 'dispositivos' => [$device, $device]])->assertSessionHasErrors(['dispositivos.0']);
+        $this->assertDatabaseCount('eventos', 0);
+    }
+
+    public function test_blocked_and_deleted_events_do_not_collide(): void
+    {
+        $active = $this->createActiveState();
+        $blocked = DB::table('estados')->insertGetId(['nombre' => 'Bloqueado', 'descripcion' => '']);
+        $deleted = DB::table('estados')->insertGetId(['nombre' => 'Eliminado', 'descripcion' => '']);
+        $organizer = $this->createUser('123456789', $active);
+        $device = $this->createDevice($active);
+        foreach ([$blocked, $deleted] as $state) {
+            $event = DB::table('eventos')->insertGetId([
+                'nombre' => 'Evento '.$state, 'descripcion' => '', 'usuario_id' => $organizer,
+                'inicio' => '2026-03-15 14:00:00', 'duracion_horas' => 2, 'aforo' => 10,
+                'estado_id' => $state, 'auto_admin' => true, 'created_at' => now(), 'updated_at' => now(),
+            ]);
+            DB::table('evento_dispos')->insert(['evento_id' => $event, 'dispositivo_id' => $device]);
+        }
+
+        $this->post(route('eventos.store'), [
+            'nombre' => 'Nuevo', 'organizador_cedula' => '123456789', 'inicio' => '2026-03-15T14:30',
+            'duracion_horas' => 1, 'aforo' => 10, 'auto_admin' => '1', 'dispositivos' => [$device],
+        ])->assertSessionHasNoErrors();
+        $this->assertDatabaseCount('eventos', 3);
+    }
+
+    public function test_unauthorized_user_cannot_create_an_event(): void
+    {
+        $this->signInAsRole('Jugador');
+        $this->post(route('eventos.store'), [])->assertForbidden();
+    }
+
     private function createActiveState(): int
     {
         return DB::table('estados')->insertGetId([
@@ -146,15 +225,15 @@ class CreateEventoTest extends TestCase
         ]);
     }
 
-    private function createDevice(int $activeStateId): int
+    private function createDevice(int $activeStateId, string $name = 'PC Gamer 01'): int
     {
         $typeId = DB::table('tipo_dispos')->insertGetId([
-            'nombre' => 'Computador',
+            'nombre' => 'Tipo '.$name,
             'descripcion' => 'Equipo de escritorio',
         ]);
 
         return DB::table('dispositivos')->insertGetId([
-            'nombre' => 'PC Gamer 01',
+            'nombre' => $name,
             'direccion' => '',
             'password' => '',
             'tipo_dispo_id' => $typeId,

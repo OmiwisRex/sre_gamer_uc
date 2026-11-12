@@ -3,12 +3,12 @@
         <h4 class="sre-admin-card-title" id="comp-reservar-title">
             {{ isset($reservaActiva) && $reservaActiva ? 'Reserva' : 'Reservar' }}
         </h4>
-        @if (isset($reservaActiva) && $reservaActiva)
+        @if ($jugador && isset($reservaActiva) && $reservaActiva)
             <span class="sre-badge">{{ $reservaActiva->estado?->nombre ?? 'Activa' }}</span>
         @endif
     </header>
 
-    @if (isset($reservaActiva) && $reservaActiva)
+    @if ($jugador && isset($reservaActiva) && $reservaActiva)
         <div class="sre-admin-card-body">
             <dl class="sre-panel-content">
                 @if ($reservaActiva->evento)
@@ -57,7 +57,7 @@
                 @endif
             </div>
         </div>
-    @else
+    @elseif ($jugador)
         <div class="sre-admin-card-body">
             <form method="POST" action="{{ route('reservas.store') }}">
                 @csrf

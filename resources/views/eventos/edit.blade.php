@@ -85,6 +85,7 @@
                             <option value="0" @selected((string) old('auto_admin', $evento->auto_admin) === '0')>Administrado por encargados</option>
                         </select>
                     </label>
+                    <label><p class="sre-hint"><br>El estado Bloqueado refiere a un evento programado y válido pero aún invisible para el público o para ser reservado o asociado</p></label>
                 </div>
             </section>
 
@@ -110,7 +111,7 @@
                                 type="checkbox"
                                 name="dispositivos[]"
                                 value="{{ $dispositivo->id }}"
-                                @checked(collect(old('dispositivos', $evento->dispositivos->modelKeys()))->contains(fn ($id) => (int) $id === $dispositivo->id))
+                                @checked(collect(old('dispositivos', $errors->any() ? [] : $evento->dispositivos->modelKeys()))->contains(fn ($id) => (int) $id === $dispositivo->id))
                             >
                             <span>{{ $dispositivo->nombre }} <span class="sre-hint">({{ $dispositivo->tipoDispo?->nombre ?? 'Sin tipo' }})</span></span>
                         </label>

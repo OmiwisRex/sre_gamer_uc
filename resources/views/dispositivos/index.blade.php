@@ -33,6 +33,7 @@
                     method="get"
                     data-resource-search-form
                     data-resource-type="dispositivo"
+                    data-load-initial
                     data-search-url="{{ route('dispositivos.search') }}"
                     data-detail-url="{{ route('dispositivos.detail', '__RECORD_ID__') }}"
                 >

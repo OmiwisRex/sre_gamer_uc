@@ -38,6 +38,7 @@
                     method="get"
                     data-resource-search-form
                     data-resource-type="usuario"
+                    data-load-initial
                     data-search-url="{{ route('usuarios.search') }}"
                     data-detail-url="{{ route('usuarios.detail', '__RECORD_ID__') }}"
                 >

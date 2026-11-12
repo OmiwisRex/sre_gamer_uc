@@ -132,6 +132,8 @@ A3. **Asociar**: es una ficha que puede tener dos estados (tírulos: Asociación
 
 A4. **Horas**: tiene un título "Horas" y luego un listado con scroll, donde se van colocando las entradas a modo de tabla, con 3 columnas: hora de inicio, dispositivo usado y fracción de horas acumuladas. Abajo fuera del scroll tiene un texto del total de horas acumuladas.
 
+Si no se ha seleccionado un jugador o la búsqueda no encuentra ninguno, las fichas Reservar, Asociar y Horas muestran únicamente sus títulos.
+
 B. **Horarios**: se divide en dos espacios, el mayor y a la izquierda B1, y a la derecha de menor tamaño B2.
 
 B1. **Tiempos**: es una matriz de 48 franjas de 30 minutos que cubren el día completo, desde las 00:00 hasta las 24:00. Las columnas representan las franjas horarias y tienen scroll horizontal. Las filas se agrupan por tipo de dispositivo, con un fondo distintivo para cada fila de tipo, y debajo se muestran sus dispositivos individuales; el conjunto puede crecer con scroll vertical. Las reservas se representan en la fila del tipo de dispositivo porque no tienen una máquina asignada. Las asociaciones se representan en la fila del dispositivo concreto, y los eventos aparecen en las filas de todos los dispositivos que tienen asignados, por lo que un mismo evento puede ocupar varias filas verticales y varias franjas horarias. Cada registro ocupa todas las celdas de 30 minutos con las que se solape. Las reservas normales se indican en azul claro y las reservas vinculadas a un evento en azul oscuro; las asociaciones normales en amarillo y las asociaciones vinculadas a un evento en naranja; los eventos en rojo claro. El número representa la cantidad de registros de esa naturaleza presentes en la celda, contando cada asociación individualmente aunque varias compartan dispositivo. Si coinciden naturalezas distintas, sus indicadores y cantidades deben conservarse por separado, sin sumar eventos, reservas y asociaciones en un único número. Los dispositivos Activos se muestran con su colorimetría normal; los Bloqueados se muestran en gris y sus celdas pasan a gris oscuro cuando tienen asociaciones o eventos. Las asociaciones Eliminadas pueden dejar una sombra morada clara únicamente cuando la celda no contiene otra información; esa sombra no tiene número ni botón. Incluye selector de fecha y un indicador de la columna horaria actual, visible únicamente cuando la fecha seleccionada sea hoy.
@@ -156,6 +158,8 @@ C. **Alertas**: tiene un título "Alertas" y un listado con scroll que se actual
 
 1. **index**: dividido en dos partes, a la izquierda la lista donde se buscan los registros de eventos, mostrando(nombre del evento, fecha de inicio, aforo, estado) y al pulsar un registro se carga la información completa en la parte derecha, mostrando (nombre del evento, descripción, nombre con apellidos del usuario organizador, fecha de inicio, duración, aforo, estado, si es auto administrado), además cuenta en el lado izquierdo filtros para (estado, cédula del organizador). En la parte superior debe tener un botón para crear un nuevo evento, lo que lleva a dicha interfaz. En el lado derecho donde se ven los detalles, aparecerá el botón de editar evento, que lleva a dicha interfaz.
 
+La lista se ordena por fecha y hora de inicio, de la más futura a la más pasada. La fecha y hora se muestran como `dd/mm/aaaa - hh:mm AM/PM` en la lista y el detalle.
+
 2. **create**: formulario para llenar los datos necesarios para crear un evento (nombre, descripción, cédula del organizador, fecha de inicio, duración, aforo aproximado, si es auto administrado, y listado para agregar o quitar dispositivos vinculados).
 
 3. **edit**: permite editar un evento, similar a create pero incluye el cambio de estado.
@@ -165,6 +169,8 @@ C. **Alertas**: tiene un título "Alertas" y un listado con scroll que se actual
 (requiere credenciales de Administrador o Master)
 
 1. **index**: dividido en dos partes, a la izquierda la lista donde se buscan los registros de dispositivos, mostrando(nombre del dispostivo, tipo de dispositivo, estado) y al pulsar un registro se carga la información completa en la parte derecha, mostrando (nombre del dispositivo, descripción, tipo de dispositivo, estado, y opcionalmente direccion si la hay), además cuenta en el lado izquierdo filtros para (estado, tipo dispositivo). En la parte superior debe tener un botón para crear un nuevo dispositivo, lo que lleva a dicha interfaz. En el lado derecho donde se ven los detalles, aparecerá el botón de editar dispositivo, que lleva a dicha interfaz.
+
+Las vistas de usuarios, dispositivos y eventos cargan sus listados al abrirse con los filtros iniciales.
 
 2. **create**: formulario para llenar los datos necesarios para crear un dispisitivo (nombre, tipo de dispositivo, descripción).
 
@@ -457,6 +463,12 @@ El servicio registra que un usuario está utilizando la sala. La asociación rep
 5. La lista corresponde exclusivamente a la fila y franja pulsadas. Las reservas se consultan por tipo; las asociaciones, por dispositivo. No se asigna artificialmente una reserva a una de las máquinas de su tipo.
 6. Al cambiar la fecha, seleccionar otra celda o actualizarse el horario, la selección debe corresponder a la celda vigente. Si deja de existir la celda o cambia la fila/fecha seleccionada, se limpia o reconstruye la lista para evitar mostrar información de otra franja.
 
+**Actualización Cíclica**:
+
+Será en JS, cada 1 minuto, sin recargar la página se actualiza views/administracion/comp_tiempos.
+
+También se actualiza cada que el views/administracion/mod_jugador hace alguna actualización, de asociación o reserva.
+
 ### Administración -> Módulo Alertas
 
 **Actualización Cíclica**:
@@ -476,12 +488,11 @@ El servicio registra que un usuario está utilizando la sala. La asociación rep
 
 ### Eventos
 
-**Create -> Crear Evento**:
+**Create -> Crear Evento / Edit -> Guardar Cambios**:
 
 1. El servicio solo permite crear eventos a un usuario autorizado para administrar eventos. El registro nuevo queda en estado **Activo**.
 2. Deben recibirse `nombre`, `descripcion`, `usuario_id` del organizador, `inicio`, `duracion_horas`, `aforo`, `auto_admin` y la lista de `dispositivo_id` que integrarán el evento.
 3. **Validar los datos**:
-   - El nombre debe ser único.
    - El organizador debe existir y estar en estado Activo.
    - `inicio` debe ser posterior al momento actual; no se permiten eventos retroactivos ni que comiencen en el instante actual.
    - `duracion_horas` y `aforo` deben ser mayores que cero.
@@ -496,6 +507,10 @@ El servicio registra que un usuario está utilizando la sala. La asociación rep
 9. **No comprobar ni rechazar por reservas o asociaciones existentes**. El evento tiene prioridad sobre ambas. Su creación no debe mostrar advertencias por esos registros ni eliminarlos, bloquearlos o cambiarles el estado automáticamente. La resolución posterior de esos conflictos corresponde al administrador presencial.
 10. Al aprobarse la validación, crear el registro en `eventos` y sus relaciones en `evento_dispos` dentro de una transacción. Si falla la creación de cualquiera de las relaciones, revertir la operación completa para no dejar un evento con una asignación parcial de dispositivos.
 11. La comprobación de colisiones y la inserción deben ejecutarse con bloqueo transaccional consistente sobre los dispositivos seleccionados, para evitar que dos solicitudes administrativas concurrentes creen eventos incompatibles sobre una misma máquina. La existencia de un solo administrador habitual reduce la concurrencia administrativa, pero no elimina la necesidad de proteger la integridad frente a solicitudes simultáneas.
+
+**Actualización Cíclica**:
+
+Un reloj JS que existe en todas las views, y se dispara cada 1 minuto, pasa el estado de un evento a Eliminado si ha superado su tiempo inicial + duración. No usar Cron.
 
 ## Instalar en Local
 

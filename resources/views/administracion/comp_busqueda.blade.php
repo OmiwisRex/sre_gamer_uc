@@ -10,7 +10,7 @@
             </header>
 
             <div class="sre-admin-card-body">
-                <form class="sre-search-form" role="search" method="get" action="{{ route('administracion.index') }}">
+                <form class="sre-search-form" role="search" method="get" action="{{ route('administracion.index') }}" data-search-form>
                     <label class="sre-field">
                         <span class="sre-label">Cédula / Código</span>
                         <input

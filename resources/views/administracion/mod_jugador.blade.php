@@ -41,6 +41,7 @@
             ])
 
             @include('administracion.comp_horas', [
+                'jugador' => $jugador ?? null,
                 'historialAsociaciones' => $historialAsociaciones ?? collect(),
                 'totalHoras' => $totalHoras ?? 0,
                 'hoursRefreshUrl' => $hoursRefreshUrl ?? null,

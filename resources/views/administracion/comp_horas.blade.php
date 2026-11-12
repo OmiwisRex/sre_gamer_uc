@@ -12,6 +12,7 @@
         <h4 class="sre-admin-card-title" id="comp-horas-title">Horas de hoy</h4>
     </header>
 
+    @if ($jugador)
     <div class="sre-admin-card-body sre-admin-card-body--scroll">
         <div class="sre-hours-scroll">
             <table class="sre-hours-table">
@@ -39,4 +40,5 @@
         </div>
         <div class="sre-hours-total">Total: {{ number_format((float) ($totalHoras ?? 0), 1) }} horas</div>
     </div>
+    @endif
 </section>

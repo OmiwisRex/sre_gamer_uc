@@ -46,7 +46,7 @@
                     </label>
                     <label class="sre-field">
                         <span class="sre-label">Fecha y hora de inicio</span>
-                        <input class="sre-input" type="datetime-local" name="inicio" value="{{ old('inicio', now()->format('Y-m-d\TH:i')) }}" required>
+                        <input class="sre-input" type="datetime-local" name="inicio" value="{{ old('inicio', now()->addMinute()->startOfMinute()->format('Y-m-d\TH:i')) }}" required>
                         @error('inicio')
                             <span class="sre-hint">{{ $message }}</span>
                         @enderror

@@ -12,7 +12,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -47,8 +46,8 @@ class EventoController extends Controller
             ->when(isset($validated['estado_id']), function (Builder $query) use ($validated): void {
                 $query->where('estado_id', $validated['estado_id']);
             })
-            ->orderBy('inicio')
-            ->orderBy('id')
+            ->orderByDesc('inicio')
+            ->orderByDesc('id')
             ->cursorPaginate(config('app.eventos_cursor_size', 20));
 
         return response()->json([
@@ -108,7 +107,7 @@ class EventoController extends Controller
         ]);
     }
 
-    public function update(Request $request, Evento $evento): RedirectResponse
+    public function update(Request $request, Evento $evento, CreateEventoService $eventService): RedirectResponse
     {
         $validated = $request->validate([
             'nombre' => ['required', 'string', 'max:32', Rule::unique('eventos', 'nombre')->ignore($evento)],
@@ -141,20 +140,16 @@ class EventoController extends Controller
             ->where('cedula', $validated['organizador_cedula'])
             ->firstOrFail();
 
-        DB::transaction(function () use ($evento, $validated, $organizer): void {
-            $evento->update([
-                'nombre' => $validated['nombre'],
-                'descripcion' => $validated['descripcion'] ?? '',
-                'usuario_id' => $organizer->id,
-                'inicio' => Carbon::parse($validated['inicio'])->toDateTimeString(),
-                'duracion_horas' => $validated['duracion_horas'],
-                'aforo' => $validated['aforo'],
-                'estado_id' => $validated['estado_id'],
-                'auto_admin' => $validated['auto_admin'],
-            ]);
-
-            $evento->dispositivos()->sync($validated['dispositivos'] ?? []);
-        });
+        $eventService->update($evento, [
+            'nombre' => $validated['nombre'],
+            'descripcion' => $validated['descripcion'] ?? '',
+            'usuario_id' => $organizer->id,
+            'inicio' => Carbon::parse($validated['inicio'])->toDateTimeString(),
+            'duracion_horas' => $validated['duracion_horas'],
+            'aforo' => $validated['aforo'],
+            'estado_id' => $validated['estado_id'],
+            'auto_admin' => $validated['auto_admin'],
+        ], $validated['dispositivos'] ?? []);
 
         return to_route('eventos.index')->with('success', 'El evento se actualizó correctamente.');
     }
@@ -211,5 +206,29 @@ class EventoController extends Controller
         ], $validated['dispositivos'] ?? []);
 
         return to_route('eventos.create')->with('success', 'El evento se creó correctamente.');
+    }
+
+    public function expire(): JsonResponse
+    {
+        $deletedState = Estado::query()->where('nombre', 'Eliminado')->firstOrFail();
+        $now = now();
+
+        Evento::query()
+            ->where('estado_id', '!=', $deletedState->id)
+            ->where('inicio', '<=', $now)
+            ->chunkById(100, function ($events) use ($deletedState, $now): void {
+                foreach ($events as $event) {
+                    if (Carbon::parse($event->inicio)->addHours((int) $event->duracion_horas)->lte($now)) {
+                        Evento::query()
+                            ->whereKey($event->id)
+                            ->where('estado_id', $event->estado_id)
+                            ->where('inicio', $event->inicio)
+                            ->where('duracion_horas', $event->duracion_horas)
+                            ->update(['estado_id' => $deletedState->id]);
+                    }
+                }
+            });
+
+        return response()->json(['ok' => true]);
     }
 }

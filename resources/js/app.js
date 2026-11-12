@@ -2,6 +2,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap';
 
 import '../css/app.css';
+import './schedule.js';
 
 document.addEventListener('click', (event) => {
     if (!(event.target instanceof Element)) {

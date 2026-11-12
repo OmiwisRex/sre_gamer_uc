@@ -1,24 +1,29 @@
-<section class="sre-selection-card" aria-labelledby="comp-seleccion-title">
+<section class="sre-selection-card" aria-labelledby="comp-seleccion-title" id="comp-seleccion">
     <header class="sre-admin-card-heading">
         <h4 class="sre-admin-card-title" id="comp-seleccion-title">Selección</h4>
     </header>
 
-    <div class="sre-selection-list">
+    <div class="sre-selection-list" id="sre-selection-list-items">
         @forelse (($seleccionItems ?? collect()) as $item)
             @php
-                $tipoItem = $item->tipo ?? 'reserva';
-                $usuarioItem = $item->usuario ?? null;
+                $tipoItem = $item['tipo'] ?? 'reserva';
+                $usuarioId = $item['usuario_id'] ?? null;
             @endphp
-            <article class="sre-selection-item sre-selection-item--{{ in_array($tipoItem, ['association', 'event'], true) ? $tipoItem : 'reservation' }}">
-                <h5 class="sre-selection-name">
-                    {{ trim(($usuarioItem?->nombres ?? '') . ' ' . ($usuarioItem?->apellidos ?? '')) ?: ($item->nombre ?? 'Elemento de horario') }}
-                </h5>
+            <button
+                type="button"
+                class="sre-selection-item sre-selection-item--{{ in_array($tipoItem, ['association', 'association-event'], true) ? 'association' : 'reservation' }}"
+                @if ($usuarioId)
+                    @click="document.querySelector('input[name=jugador_id]').value = '{{ $usuarioId }}'; document.querySelector('form').submit();"
+                @endif
+                style="{{ $usuarioId ? 'cursor: pointer;' : '' }}"
+            >
+                <h5 class="sre-selection-name">{{ $item['nombre'] ?? 'Elemento de horario' }}</h5>
                 <div class="sre-selection-meta">
-                    <span>{{ isset($item->inicio) ? \Illuminate\Support\Carbon::parse($item->inicio)->format('d/m/Y - h:i A') : 'Sin fecha' }}</span>
-                    <span>{{ $item->duracion_min ?? '—' }} min</span>
-                    <span>{{ $tipoItem === 'association' ? 'Asociación' : ($tipoItem === 'event' ? 'Evento' : 'Reserva') }}</span>
+                    <span>{{ isset($item['inicio']) ? \Illuminate\Support\Carbon::parse($item['inicio'])->format('d/m/Y - h:i A') : 'Sin fecha' }}</span>
+                    <span>{{ $item['duracion_min'] ?? '—' }} min</span>
+                    <span>{{ in_array($tipoItem, ['association', 'association-event']) ? 'Asociación' : 'Reserva' }}</span>
                 </div>
-            </article>
+            </button>
         @empty
             <div class="sre-empty-state">
                 <strong>Sin elementos seleccionados</strong>

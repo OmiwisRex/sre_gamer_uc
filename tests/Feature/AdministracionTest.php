@@ -70,7 +70,7 @@ class AdministracionTest extends TestCase
 
         $this->travelTo(Carbon::parse('2026-03-15 13:45:00'));
 
-        $response = $this->get(route('administracion.index'));
+        $response = $this->get(route('administracion.index', ['jugador_id' => '123456789']));
 
         $response->assertOk()
             ->assertSee('<option value="'.$tipoDispoId.'" title="Tipo de dispositivo">Tipo de dispositiv...</option>', false)
@@ -119,7 +119,9 @@ class AdministracionTest extends TestCase
 
     public function test_association_form_has_empty_reservation_id_and_no_reserved_badge_when_not_provided(): void
     {
-        $response = $this->get(route('administracion.index'));
+        $stateId = $this->createState('Activo');
+        $this->createPlayer('123456789', 'ST-123', $stateId, 'Estudiante');
+        $response = $this->get(route('administracion.index', ['jugador_id' => '123456789']));
 
         $response->assertOk()
             ->assertDontSee('<span class="sre-badge">Reservado</span>', false)
@@ -197,7 +199,39 @@ class AdministracionTest extends TestCase
         $this->get(route('administracion.index', ['jugador_id' => 'NO-EXISTE']))
             ->assertOk()
             ->assertSee('No encontrado')
-            ->assertSee('No se encontró un jugador');
+            ->assertSee('No se encontró un jugador')
+            ->assertSee('id="comp-reservar-title"', false)
+            ->assertSee('id="comp-asociar-title"', false)
+            ->assertSee('id="comp-horas-title"', false)
+            ->assertDontSee('Crear reserva')
+            ->assertDontSee('Crear asociación')
+            ->assertDontSee('Sin actividad registrada hoy.')
+            ->assertDontSee('Total: 0.0 horas');
+    }
+
+    public function test_player_cards_show_only_titles_before_search(): void
+    {
+        $this->get(route('administracion.index'))
+            ->assertOk()
+            ->assertSee('id="comp-reservar-title"', false)
+            ->assertSee('id="comp-asociar-title"', false)
+            ->assertSee('id="comp-horas-title"', false)
+            ->assertDontSee('Crear reserva')
+            ->assertDontSee('Crear asociación')
+            ->assertDontSee('Sin actividad registrada hoy.')
+            ->assertDontSee('Total: 0.0 horas');
+    }
+
+    public function test_hours_refresh_keeps_the_hours_body_for_the_selected_player(): void
+    {
+        $stateId = $this->createState('Activo');
+        $playerId = $this->createPlayer('123456789', 'ST-123', $stateId, 'Estudiante');
+
+        $this->post(route('administracion.jugadores.horas.refresh', $playerId))
+            ->assertOk()
+            ->assertSee('id="comp-horas"', false)
+            ->assertSee('Sin actividad registrada hoy.')
+            ->assertSee('Total: 0.0 horas');
     }
 
     public function test_active_association_is_shown_instead_of_the_create_form(): void

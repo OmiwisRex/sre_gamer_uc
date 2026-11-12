@@ -18,6 +18,9 @@ Route::post('/login', [SesionController::class, 'store'])
 Route::post('/recuperar', [SesionController::class, 'recover'])
     ->middleware('throttle:6,1')
     ->name('sesion.recover');
+Route::post('/eventos/finalizar-vencidos', [EventoController::class, 'expire'])
+    ->middleware('throttle:120,1')
+    ->name('eventos.expire');
 Route::post('/logout', [SesionController::class, 'destroy'])
     ->middleware('auth')
     ->name('sesion.logout');
@@ -45,6 +48,10 @@ Route::middleware('auth')->group(function (): void {
         Route::post('/asociaciones/{asociacion}/continuar', [AdministracionController::class, 'continueAssociation'])->name('asociaciones.continue');
         Route::post('/administracion/jugadores/{usuario}/horas', [AdministracionController::class, 'refreshPlayerHours'])
             ->name('administracion.jugadores.horas.refresh');
+        Route::get('/administracion/horario', [AdministracionController::class, 'getSchedule'])
+            ->name('administracion.horario.get');
+        Route::post('/administracion/horario/seleccion', [AdministracionController::class, 'getScheduleSelection'])
+            ->name('administracion.horario.seleccion');
         Route::get('/usuarios/create', [UsuarioController::class, 'create'])->name('usuarios.create');
         Route::get('/usuarios/{usuario}/edit', [UsuarioController::class, 'edit'])->name('usuarios.edit');
         Route::put('/usuarios/{usuario}', [UsuarioController::class, 'update'])->name('usuarios.update');

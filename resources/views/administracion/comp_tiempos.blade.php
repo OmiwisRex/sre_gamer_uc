@@ -1,15 +1,19 @@
 @php
-    $horasTimeline = $horasTimeline ?? range(6, 12);
+    $horasTimeline = $horasTimeline ?? range(0, 23);
     $ocupaciones = $ocupaciones ?? [];
     $dispositivos = $dispositivos ?? collect();
+    $fechaSeleccionada = $fechaSeleccionada ?? now()->toDateString();
+    $hoy = now(config('app.timezone'))->toDateString();
+    $esHoy = $fechaSeleccionada === $hoy;
+    $horaActual = (int) now(config('app.timezone'))->format('G');
 @endphp
 
-<section class="sre-timeline-card" aria-labelledby="comp-tiempos-title">
+<section class="sre-timeline-card" aria-labelledby="comp-tiempos-title" id="comp-tiempos">
     <header class="sre-admin-card-heading">
         <h4 class="sre-admin-card-title" id="comp-tiempos-title">Tiempos</h4>
         <div class="sre-heading-actions">
             <span class="sre-label">Fecha del horario</span>
-            <input class="sre-input" type="date" name="fecha_horario" value="{{ old('fecha_horario', $fechaSeleccionada ?? now()->toDateString()) }}">
+            <input class="sre-input sre-fecha-horario-input" type="date" name="fecha_horario" value="{{ $fechaSeleccionada }}" data-endpoint="{{ route('administracion.horario.get') }}">
         </div>
     </header>
 
@@ -17,30 +21,34 @@
         <div class="sre-timeline-grid" style="--sre-timeline-columns: {{ max(count($horasTimeline), 1) }};" role="table" aria-label="Horario de dispositivos">
             <span class="sre-timeline-cell sre-timeline-cell--heading" role="columnheader">Dispositivo</span>
             @foreach ($horasTimeline as $hora)
-                <span class="sre-timeline-cell sre-timeline-cell--heading {{ (int) $hora === (int) now()->format('G') ? 'sre-timeline-cell--now' : '' }}" role="columnheader">
-                    {{ is_numeric($hora) ? sprintf('%02d:00', $hora) : $hora }}
+                <span class="sre-timeline-cell sre-timeline-cell--heading {{ $esHoy && (int) $hora === $horaActual ? 'sre-timeline-cell--now' : '' }}" role="columnheader">
+                    {{ sprintf('%02d:00', (int) $hora) }}
                 </span>
             @endforeach
 
-            @forelse (($dispositivos ?? collect()) as $dispositivo)
-                <span class="sre-timeline-cell sre-timeline-cell--device" role="rowheader" title="{{ $dispositivo->nombre }}">{{ $dispositivo->nombre }}</span>
+            @forelse ($dispositivos as $dispositivo)
+                <span class="sre-timeline-cell sre-timeline-cell--device" role="rowheader" title="{{ $dispositivo->nombre }}">
+                    {{ $dispositivo->nombre }}
+                </span>
                 @foreach ($horasTimeline as $hora)
                     @php
-                        $horaKey = is_numeric($hora) ? (int) $hora : (string) $hora;
+                        $horaKey = (int) $hora;
                         $ocupacion = $ocupaciones[$dispositivo->id][$horaKey] ?? null;
-                        $tipoOcupacion = is_array($ocupacion) ? ($ocupacion['tipo'] ?? 'occupied') : 'occupied';
-                        $etiquetaOcupacion = is_array($ocupacion) ? ($ocupacion['etiqueta'] ?? 'Ocupado') : 'Ocupado';
                     @endphp
-                    @if ($ocupacion)
+                    @if ($ocupacion && is_array($ocupacion))
                         <button
-                            class="sre-timeline-cell sre-timeline-cell--{{ in_array($tipoOcupacion, ['association', 'event'], true) ? $tipoOcupacion : 'occupied' }}"
+                            class="sre-timeline-cell sre-timeline-cell--{{ $ocupacion['tipo'] }}"
                             type="button"
-                            role="cell"
-                            aria-label="{{ $dispositivo->nombre }}, {{ is_numeric($hora) ? sprintf('%02d:00', $hora) : $hora }}: {{ $etiquetaOcupacion }}"
-                            title="{{ $etiquetaOcupacion }}"
-                        >{{ $etiquetaOcupacion }}</button>
+                            role="button"
+                            aria-label="{{ $dispositivo->nombre }}, {{ sprintf('%02d:00', $horaKey) }}: {{ $ocupacion['etiqueta'] }}"
+                            data-dispositivo-id="{{ $dispositivo->id }}"
+                            data-hora="{{ $horaKey }}"
+                            data-fecha="{{ $fechaSeleccionada }}"
+                            title="{{ $ocupacion['etiqueta'] }}"
+                            @click="$dispatch('horario-click', { dispositivoId: {{ $dispositivo->id }}, hora: {{ $horaKey }}, fecha: '{{ $fechaSeleccionada }}' })"
+                        >{{ substr($ocupacion['etiqueta'], 0, 15) }}</button>
                     @else
-                        <span class="sre-timeline-cell" role="cell" aria-label="{{ $dispositivo->nombre }}, {{ is_numeric($hora) ? sprintf('%02d:00', $hora) : $hora }}: disponible"></span>
+                        <span class="sre-timeline-cell" role="cell" aria-label="{{ $dispositivo->nombre }}, {{ sprintf('%02d:00', $horaKey) }}: disponible"></span>
                     @endif
                 @endforeach
             @empty
@@ -54,7 +62,8 @@
 
     <footer class="sre-timeline-legend" aria-label="Leyenda de horarios">
         <span class="sre-legend-item"><span class="sre-legend-swatch sre-legend-swatch--association"></span>Asociación</span>
-        <span class="sre-legend-item"><span class="sre-legend-swatch"></span>Reserva</span>
-        <span class="sre-legend-item"><span class="sre-legend-swatch sre-legend-swatch--event"></span>Evento</span>
+        <span class="sre-legend-item"><span class="sre-legend-swatch sre-legend-swatch--association-event"></span>Asociación Evento</span>
+        <span class="sre-legend-item"><span class="sre-legend-swatch sre-legend-swatch--reservation"></span>Reserva</span>
+        <span class="sre-legend-item"><span class="sre-legend-swatch sre-legend-swatch--reservation-event"></span>Reserva Evento</span>
     </footer>
 </section>

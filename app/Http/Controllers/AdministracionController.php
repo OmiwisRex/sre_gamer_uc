@@ -157,6 +157,9 @@ class AdministracionController extends Controller
             }
         }
 
+        $fechaSeleccionada = now(config('app.timezone'))->toDateString();
+        $scheduleData = $this->getScheduleData($fechaSeleccionada);
+
         return view('administracion.index', [
             'tiposDispo' => TipoDispo::query()->orderBy('nombre')->get(['id', 'nombre']),
             'eventos' => Evento::query()
@@ -179,6 +182,10 @@ class AdministracionController extends Controller
                 ? route('administracion.jugadores.horas.refresh', $jugador)
                 : null,
             'reserva_id' => $reservaIdConversion,
+            'fechaSeleccionada' => $fechaSeleccionada,
+            'horasTimeline' => range(0, 23),
+            'ocupaciones' => $scheduleData['ocupaciones'],
+            'seleccionItems' => $scheduleData['seleccionItems'],
         ]);
     }
 
@@ -195,12 +202,100 @@ class AdministracionController extends Controller
             ->exists();
 
         return view('administracion.comp_horas', [
+            'jugador' => $usuario,
             'historialAsociaciones' => $historialAsociaciones,
             'totalHoras' => $historialAsociaciones->sum('horas'),
             'hoursRefreshUrl' => $hasActiveAssociation
                 ? route('administracion.jugadores.horas.refresh', $usuario)
                 : null,
         ]);
+    }
+
+    public function getSchedule(Request $request)
+    {
+        $validated = $request->validate([
+            'fecha' => ['required', 'date_format:Y-m-d'],
+        ]);
+
+        $scheduleData = $this->getScheduleData($validated['fecha']);
+
+        $dispositivos = Dispositivo::query()
+            ->with(['tipoDispo:id,nombre', 'estado:id,nombre'])
+            ->whereHas('estado', function (Builder $query): void {
+                $query->where('nombre', 'Activo');
+            })
+            ->orderBy('nombre')
+            ->get(['id', 'nombre', 'tipo_dispo_id', 'estado_id']);
+
+        return response()->json([
+            'ocupaciones' => $scheduleData['ocupaciones'],
+            'dispositivos' => $dispositivos,
+            'horasTimeline' => range(0, 23),
+        ]);
+    }
+
+    public function getScheduleSelection(Request $request)
+    {
+        $validated = $request->validate([
+            'fecha' => ['required', 'date_format:Y-m-d'],
+            'dispositivo_id' => ['required', 'integer'],
+            'hora' => ['required', 'integer', 'min:0', 'max:23'],
+        ]);
+
+        $fecha = Carbon::createFromFormat('Y-m-d', $validated['fecha'], config('app.timezone'))->startOfDay();
+        $horaInicio = $fecha->copy()->setHour($validated['hora'])->setMinute(0)->setSecond(0);
+        $horaFin = $horaInicio->copy()->addHour();
+
+        $dispositivo = Dispositivo::query()->find($validated['dispositivo_id']);
+        if (! $dispositivo) {
+            return response()->json(['items' => []]);
+        }
+
+        $items = collect();
+
+        if ($dispositivo->tipoDispo) {
+            $reservas = Reserva::query()
+                ->with(['usuario:id,nombres,apellidos', 'tipoDispo:id,nombre', 'evento:id,nombre'])
+                ->where('tipo_dispo_id', $dispositivo->tipo_dispo_id)
+                ->where(function (Builder $query) use ($horaInicio, $horaFin): void {
+                    $query->where('inicio', '<', $horaFin)
+                        ->whereRaw('DATE_ADD(inicio, INTERVAL duracion_min MINUTE) > ?', [$horaInicio]);
+                })
+                ->get();
+
+            foreach ($reservas as $reserva) {
+                $items->push([
+                    'tipo' => $reserva->evento_id ? 'reservation-event' : 'reservation',
+                    'nombre' => trim($reserva->usuario->nombres . ' ' . $reserva->usuario->apellidos),
+                    'inicio' => $reserva->inicio,
+                    'duracion_min' => $reserva->duracion_min,
+                    'evento' => $reserva->evento?->nombre,
+                    'usuario_id' => $reserva->usuario_id,
+                ]);
+            }
+        }
+
+        $asociaciones = Asociacion::query()
+            ->with(['usuario:id,nombres,apellidos', 'dispositivo:id,nombre', 'evento:id,nombre'])
+            ->where('dispositivo_id', $dispositivo->id)
+            ->where(function (Builder $query) use ($horaInicio, $horaFin): void {
+                $query->where('inicio', '<', $horaFin)
+                    ->where('final', '>', $horaInicio);
+            })
+            ->get();
+
+        foreach ($asociaciones as $asociacion) {
+            $items->push([
+                'tipo' => $asociacion->evento_id ? 'association-event' : 'association',
+                'nombre' => trim($asociacion->usuario->nombres . ' ' . $asociacion->usuario->apellidos),
+                'inicio' => $asociacion->inicio,
+                'duracion_min' => (int) ((strtotime($asociacion->final) - strtotime($asociacion->inicio)) / 60),
+                'evento' => $asociacion->evento?->nombre,
+                'usuario_id' => $asociacion->usuario_id,
+            ]);
+        }
+
+        return response()->json(['items' => $items]);
     }
 
     public function storeReservation(Request $request, CreateReservaService $createReserva): RedirectResponse
@@ -385,4 +480,108 @@ class AdministracionController extends Controller
 
         return $historialAsociaciones;
     }
+
+    private function getScheduleData(string $fechaSeleccionada): array
+    {
+        $fecha = Carbon::createFromFormat('Y-m-d', $fechaSeleccionada, config('app.timezone'))->startOfDay();
+        $fechaFin = $fecha->copy()->endOfDay();
+
+        $activeDevices = Dispositivo::query()
+            ->with(['tipoDispo:id,nombre', 'estado:id,nombre'])
+            ->whereHas('estado', function (Builder $query): void {
+                $query->where('nombre', 'Activo');
+            })
+            ->orderBy('nombre')
+            ->get(['id', 'nombre', 'tipo_dispo_id', 'estado_id']);
+
+        $ocupaciones = [];
+        $seleccionItems = collect();
+
+        foreach ($activeDevices as $dispositivo) {
+            $ocupaciones[$dispositivo->id] = [];
+
+            for ($hora = 0; $hora < 24; $hora++) {
+                $ocupaciones[$dispositivo->id][$hora] = null;
+            }
+        }
+
+        $asociaciones = Asociacion::query()
+            ->with(['usuario:id,nombres,apellidos', 'dispositivo:id,nombre', 'estado:id,nombre', 'evento:id,nombre'])
+            ->whereIn('dispositivo_id', $activeDevices->modelKeys())
+            ->where(function (Builder $query) use ($fecha, $fechaFin): void {
+                $query->whereBetween('inicio', [$fecha, $fechaFin])
+                    ->orWhereBetween('final', [$fecha, $fechaFin])
+                    ->orWhere(function (Builder $q) use ($fecha, $fechaFin): void {
+                        $q->where('inicio', '<', $fecha)->where('final', '>', $fechaFin);
+                    });
+            })
+            ->get();
+
+        foreach ($asociaciones as $asociacion) {
+            $inicio = Carbon::parse($asociacion->inicio, config('app.timezone'));
+            $final = Carbon::parse($asociacion->final, config('app.timezone'));
+
+            for ($hora = 0; $hora < 24; $hora++) {
+                $horaInicio = $fecha->copy()->setHour($hora)->setMinute(0)->setSecond(0);
+                $horaFin = $horaInicio->copy()->addHour();
+
+                if ($inicio->lt($horaFin) && $final->gt($horaInicio)) {
+                    $tipoAsociacion = $asociacion->evento_id ? 'association-event' : 'association';
+                    $ocupaciones[$asociacion->dispositivo_id][$hora] = [
+                        'tipo' => $tipoAsociacion,
+                        'etiqueta' => $asociacion->usuario->nombres ?? 'Usuario',
+                        'id' => $asociacion->id,
+                        'usuarioId' => $asociacion->usuario_id,
+                        'estado' => $asociacion->estado->nombre,
+                    ];
+                }
+            }
+        }
+
+        $reservas = Reserva::query()
+            ->with(['usuario:id,nombres,apellidos', 'tipoDispo:id,nombre', 'estado:id,nombre', 'evento:id,nombre'])
+            ->where(function (Builder $query) use ($fecha, $fechaFin): void {
+                $query->whereBetween('inicio', [$fecha, $fechaFin])
+                    ->orWhere(function (Builder $q) use ($fecha, $fechaFin): void {
+                        $q->where('inicio', '<', $fechaFin)
+                            ->whereRaw('DATE_ADD(inicio, INTERVAL duracion_min MINUTE) > ?', [$fecha]);
+                    });
+            })
+            ->get();
+
+        foreach ($reservas as $reserva) {
+            $inicio = Carbon::parse($reserva->inicio, config('app.timezone'));
+            $final = $inicio->copy()->addMinutes($reserva->duracion_min);
+
+            $tiposDispoIds = $activeDevices
+                ->where('tipo_dispo_id', $reserva->tipo_dispo_id)
+                ->modelKeys();
+
+            foreach ($tiposDispoIds as $dispoId) {
+                for ($hora = 0; $hora < 24; $hora++) {
+                    $horaInicio = $fecha->copy()->setHour($hora)->setMinute(0)->setSecond(0);
+                    $horaFin = $horaInicio->copy()->addHour();
+
+                    if ($inicio->lt($horaFin) && $final->gt($horaInicio)) {
+                        if (! isset($ocupaciones[$dispoId][$hora]) || $ocupaciones[$dispoId][$hora] === null) {
+                            $tipoReserva = $reserva->evento_id ? 'reservation-event' : 'reservation';
+                            $ocupaciones[$dispoId][$hora] = [
+                                'tipo' => $tipoReserva,
+                                'etiqueta' => $reserva->usuario->nombres ?? 'Usuario',
+                                'id' => $reserva->id,
+                                'usuarioId' => $reserva->usuario_id,
+                                'estado' => $reserva->estado->nombre,
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+
+        return [
+            'ocupaciones' => $ocupaciones,
+            'seleccionItems' => $seleccionItems,
+        ];
+    }
 }
+

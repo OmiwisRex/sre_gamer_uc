@@ -63,19 +63,20 @@
 - Om, controlador y servicio para crear eventos, aún sin lógica de colisiónes.
 - Om, controlador para crear usuario, ya sea como invitado o con todos los datos.
 - Om, seeder y configuracion en .env para admin Master.
-- Om, consulta de listado de usuarios con cursor de scroll y detalles de un usuario (falta ajustar presentación).
+- Om, consulta de listado de usuarios con cursor de scroll y detalles de un usuario.
 
 06/11/2026 Vi:
 
 - Om, ajustada presentación detalles de usuario.
-- Om, consulta de listado de eventos con cursor de scroll y detalles de un evento
-- Om, consulta de listado de dispositivos con cursor de scroll y detalles de un dispositivo
+- Om, consulta de listado de eventos con cursor de scroll y detalles de un evento.
+- Om, consulta de listado de dispositivos con cursor de scroll y detalles de un dispositivo.
 - Om, edición de usuarios.
 - Om, edición de dispositivos.
 - Om, edición de eventos.
 - Om, cambio de contraseña.
 - Om, revisado el README, para documentación y contexto a la IA.
-- Om, sistema de inicio de sesión, cierre de sesión, recuperación de contraseña y permisos por roles ok.
+- Om, sistema de inicio de sesión, cierre de sesión, recuperación de contraseña.
+- Om, permisos por roles ok bloqueando vistas, además muestra ficha de logeado.
 
 09/11/2026 Lu:
 
@@ -97,3 +98,8 @@
 - Om, redactada lógica del calendario y lógica faltante en el README.
 - Om, ya funciona bien la búsqueda de auditorías.
 - Om, ya funciona bien la búsqueda de observaciónes.
+
+12/11/2026 Ju:
+
+- Om, ya funciona la lógica compleja al crear evento y al actualizarlo con edición.
+- Om, organizados muchos errores menores.

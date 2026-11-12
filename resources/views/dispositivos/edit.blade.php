@@ -62,7 +62,7 @@
                             <span class="sre-hint">{{ $message }}</span>
                         @enderror
                     </label>
-                    <label></label>
+                    <label><p class="sre-hint"><br><br>El estado Bloqueado refiere a un dispositivo dañado o en mantenimiento</p></label>
                     <label class="sre-field">
                         <span class="sre-label">Descripción</span>
                         <textarea class="sre-textarea" name="descripcion" maxlength="256">{{ old('descripcion', $dispositivo->descripcion) }}</textarea>

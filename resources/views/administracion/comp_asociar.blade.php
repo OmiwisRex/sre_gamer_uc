@@ -3,14 +3,14 @@
         <h4 class="sre-admin-card-title" id="comp-asociar-title">
             {{ isset($asociacionActiva) && $asociacionActiva ? 'Asociación' : 'Asociar' }}
         </h4>
-        @if (isset($asociacionActiva) && $asociacionActiva)
+        @if ($jugador && isset($asociacionActiva) && $asociacionActiva)
             <span class="sre-badge">{{ $asociacionActiva->estado?->nombre ?? 'Activa' }}</span>
-        @elseif (! empty($reserva_id))
+        @elseif ($jugador && ! empty($reserva_id))
             <span class="sre-badge">Reservado</span>
         @endif
     </header>
 
-    @if (isset($asociacionActiva) && $asociacionActiva)
+    @if ($jugador && isset($asociacionActiva) && $asociacionActiva)
         @php
             $observacionesAsociacion = $asociacionActiva->observaciones
                 ->pluck('mensaje')
@@ -61,7 +61,7 @@
                 @endif
             </div>
         </div>
-    @else
+    @elseif ($jugador)
         @php
             $reservaEnConversion = isset($reservaActiva)
                 && $reservaActiva
@@ -113,18 +113,6 @@
                         </select>
                         @error('dispositivo_id')<span class="sre-hint" role="alert">{{ $message }}</span>@enderror
                     </label>
-                    @if ($asociacionesPorDispositivo->isNotEmpty())
-                        <details class="sre-field">
-                            <summary class="sre-label">Jugadores asociados por dispositivo</summary>
-                            @foreach ($asociacionesPorDispositivo as $asociacionesDelDispositivo)
-                                @php($asociacionCompartida = $asociacionesDelDispositivo->first())
-                                <p>
-                                    <strong>{{ $asociacionCompartida->dispositivo?->nombre ?? 'Dispositivo' }}:</strong>
-                                    {{ $asociacionesDelDispositivo->map(fn ($asociacion) => trim(($asociacion->usuario?->nombres ?? '').' '.($asociacion->usuario?->apellidos ?? '')).' ('.number_format((float) $asociacion->horas, 1).' h)')->implode(', ') }}
-                                </p>
-                            @endforeach
-                        </details>
-                    @endif
                     <label class="sre-field">
                         <span class="sre-label">Observación <span class="sre-hint">(opcional)</span></span>
                         <textarea class="sre-textarea sre-ta-mas" name="observacion" maxlength="256" placeholder="Añade un comentario">{{ old('observacion') }}</textarea>

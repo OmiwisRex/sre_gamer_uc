@@ -33,6 +33,7 @@
                     method="get"
                     data-resource-search-form
                     data-resource-type="evento"
+                    data-load-initial
                     data-search-url="{{ route('eventos.search') }}"
                     data-detail-url="{{ route('eventos.detail', '__RECORD_ID__') }}"
                 >
