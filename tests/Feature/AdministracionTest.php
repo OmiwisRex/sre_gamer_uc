@@ -470,6 +470,77 @@ class AdministracionTest extends TestCase
         $this->assertDatabaseCount('asociaciones', 1);
     }
 
+    public function test_schedule_groups_half_hour_reservations_and_device_activity_without_assigning_reservations_to_devices(): void
+    {
+        $this->travelTo(Carbon::parse('2026-03-15 10:15:00'));
+        $active = $this->createState('Activo');
+        $deleted = $this->createState('Eliminado');
+        $player = $this->createPlayer('123456789', 'ST-123', $active, 'Estudiante');
+        $type = DB::table('tipo_dispos')->insertGetId(['nombre' => 'Computador', 'descripcion' => 'Tipo']);
+        $device = DB::table('dispositivos')->insertGetId([
+            'nombre' => 'PC 1', 'direccion' => '', 'password' => '', 'tipo_dispo_id' => $type,
+            'estado_id' => $active, 'descripcion' => 'Equipo', 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $otherDevice = DB::table('dispositivos')->insertGetId([
+            'nombre' => 'PC 2', 'direccion' => '', 'password' => '', 'tipo_dispo_id' => $type,
+            'estado_id' => $active, 'descripcion' => 'Equipo', 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $event = DB::table('eventos')->insertGetId([
+            'nombre' => 'Torneo', 'descripcion' => '', 'usuario_id' => $player,
+            'inicio' => '2026-03-15 10:30:00', 'duracion_horas' => 1, 'aforo' => 2,
+            'estado_id' => $active, 'auto_admin' => false, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        DB::table('evento_dispos')->insert([
+            'evento_id' => $event, 'dispositivo_id' => $device, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $this->createReservation($player, $type, $active, '2026-03-15 10:00:00', 30);
+        $this->createReservation($player, $type, $active, '2026-03-14 23:45:00', 30);
+        $this->createReservation($player, $type, $deleted, '2026-03-15 10:00:00', 30);
+        DB::table('reservas')->insert([
+            'usuario_id' => $player, 'tipo_dispo_id' => $type, 'evento_id' => $event, 'estado_id' => $active,
+            'inicio' => '2026-03-15 10:15:00', 'duracion_min' => 30, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $this->createAssociation($player, $device, $active, '2026-03-15 10:00:00', '2026-03-15 10:30:00');
+        DB::table('asociaciones')->insert([
+            'usuario_id' => $player, 'dispositivo_id' => $device, 'evento_id' => $event, 'reserva_id' => null,
+            'estado_id' => $active, 'inicio' => '2026-03-15 10:15:00', 'final' => '2026-03-15 11:00:00',
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $response = $this->getJson(route('administracion.horario.get', ['fecha' => '2026-03-15']));
+
+        $response->assertOk()
+            ->assertJsonPath("reservasPorTipo.$type.0.cantidad", 1)
+            ->assertJsonPath("reservasPorTipo.$type.20.cantidad", 2)
+            ->assertJsonPath("reservasPorTipo.$type.20.tipo", 'reservation-event')
+            ->assertJsonPath("reservasPorTipo.$type.21.cantidad", 1)
+            ->assertJsonMissingPath("reservasPorTipo.$type.22")
+            ->assertJsonPath("ocupaciones.$device.20.cantidad", 2)
+            ->assertJsonPath("ocupaciones.$device.20.tipo", 'association-event')
+            ->assertJsonPath("ocupaciones.$device.22.tipo", 'event')
+            ->assertJsonMissingPath("ocupaciones.$device.23")
+            ->assertJsonMissingPath("ocupaciones.$otherDevice");
+        $this->assertStringContainsString('Computador', $response->json('html'));
+        $this->assertStringContainsString('10 Am', $response->json('html'));
+        $this->assertStringContainsString('title="23:30"', $response->json('html'));
+
+        $this->postJson(route('administracion.horario.seleccion'), [
+            'fecha' => '2026-03-15', 'franja' => 20, 'tipo_dispo_id' => $type,
+        ])->assertOk()->assertJsonCount(2, 'items')->assertJsonPath('items.0.identificacion', '123456789');
+
+        $this->postJson(route('administracion.horario.seleccion'), [
+            'fecha' => '2026-03-15', 'franja' => 21, 'dispositivo_id' => $device,
+        ])->assertOk()->assertJsonCount(1, 'items')->assertJsonPath('items.0.tipo', 'association-event');
+
+        $this->postJson(route('administracion.horario.seleccion'), [
+            'fecha' => '2026-03-15', 'franja' => 48, 'dispositivo_id' => $device,
+        ])->assertUnprocessable()->assertJsonValidationErrors('franja');
+
+        $this->postJson(route('administracion.horario.seleccion'), [
+            'fecha' => '2026-03-15', 'franja' => 20, 'dispositivo_id' => $device, 'tipo_dispo_id' => $type,
+        ])->assertUnprocessable()->assertJsonValidationErrors(['dispositivo_id', 'tipo_dispo_id']);
+    }
+
     private function createState(string $name): int
     {
         return DB::table('estados')->insertGetId([

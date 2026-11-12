@@ -514,6 +514,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             hoursPanel.replaceWith(refreshedPanel);
+            document.dispatchEvent(new Event('horario-actualizar'));
         } catch (error) {
             console.error(error);
         } finally {

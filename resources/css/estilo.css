@@ -498,7 +498,7 @@
     min-height: 48rem;
     flex: 1 0 auto;
     grid-template-columns: minmax(0, 2.1fr) minmax(16rem, 1fr);
-    grid-template-rows: minmax(29rem, 1.15fr) minmax(20rem, 0.85fr);
+    grid-template-rows: minmax(29rem, 1.15fr) minmax(32rem, 0.85fr);
     grid-template-areas:
         "player alerts"
         "schedule schedule";
@@ -528,6 +528,7 @@
 
 .sre-admin-module--schedule {
     grid-area: schedule;
+    height: 32rem;
 }
 
 .sre-admin-module-heading {
@@ -905,8 +906,7 @@
 .sre-timeline-grid {
     display: grid;
     min-width: max-content;
-    /* grid-template-columns: 8.5rem repeat(var(--sre-timeline-columns), minmax(3rem, 1fr)); */
-    grid-template-columns: 160px repeat(var(--sre-timeline-columns), minmax(100px, 1fr));
+    grid-template-columns: 160px repeat(var(--sre-timeline-columns), 3.5rem);
     gap: 0.2rem;
 }
 
@@ -930,7 +930,8 @@
 }
 
 .sre-timeline-cell--heading:first-child,
-.sre-timeline-cell--device {
+.sre-timeline-cell--device,
+.sre-timeline-cell--type-header {
     position: sticky;
     left: 0;
     z-index: 2;
@@ -943,6 +944,19 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+.sre-timeline-cell--type-header,
+.sre-timeline-cell--type-count {
+    background: #e5e9ec;
+    color: var(--gris-oscuro);
+    font-weight: 700;
+}
+
+.sre-timeline-cell--evento { background: var(--evento); }
+.sre-timeline-cell--asociacion-evento { background: var(--asociacion-evento); }
+.sre-timeline-cell--asociacion { background: var(--asociacion); }
+.sre-timeline-cell--reserva-evento { background: var(--reserva-evento); }
+.sre-timeline-cell--reserva { background: var(--reserva); }
 
 .sre-timeline-cell--occupied {
     border-color: #b7e5e3;
@@ -998,6 +1012,11 @@
 .sre-selection-item--association {
     border-left-color: var(--azul-claro);
 }
+
+.sre-selection-item--association { border-left-color: var(--asociacion); }
+.sre-selection-item--association-event { border-left-color: var(--asociacion-evento); }
+.sre-selection-item--reservation { border-left-color: var(--reserva); }
+.sre-selection-item--reservation-event { border-left-color: var(--reserva-evento); }
 
 .sre-selection-item--event {
     border-left-color: var(--amarillo-medio);
@@ -1072,18 +1091,21 @@
     background: var(--azul-claro);
 }
 
-.sre-legend-swatch--association {
-    background: var(--aqua-uno);
-}
+.sre-legend-swatch--evento { background: var(--evento); }
+.sre-legend-swatch--asociacion-evento { background: var(--asociacion-evento); }
+.sre-legend-swatch--asociacion { background: var(--asociacion); }
+.sre-legend-swatch--reserva-evento { background: var(--reserva-evento); }
+.sre-legend-swatch--reserva { background: var(--reserva); }
 
-.sre-legend-swatch--event {
-    background: var(--amarillo-medio);
+.sre-timeline-error {
+    padding: 0.4rem 0.75rem;
+    color: #a52222;
 }
 
 @media (max-width: 1100px) {
     .sre-admin-dashboard {
         grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: minmax(35rem, auto) minmax(20rem, auto) minmax(22rem, auto);
+        grid-template-rows: minmax(35rem, auto) minmax(20rem, auto) minmax(32rem, auto);
         grid-template-areas:
             "player"
             "alerts"
@@ -1128,7 +1150,11 @@
 
     .sre-schedule-layout {
         grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: minmax(24rem, 1fr) minmax(17rem, 0.8fr);
+        grid-template-rows: minmax(30rem, 1fr) minmax(22rem, 0.8fr);
+    }
+
+    .sre-admin-module--schedule {
+        height: 55rem;
     }
 }
 

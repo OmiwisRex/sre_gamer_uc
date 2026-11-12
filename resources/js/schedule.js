@@ -1,182 +1,176 @@
 import { formatDateTimeWithPeriod } from './dateFormatter.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-    let scheduleUpdateInProgress = false;
-    let scheduleUpdateTimer = null;
-
-    const updateSchedule = async () => {
-        const tiemposPanel = document.querySelector('#comp-tiempos');
-        const fechaInput = document.querySelector('.sre-fecha-horario-input');
-
-        if (!(tiemposPanel instanceof HTMLElement) || !(fechaInput instanceof HTMLInputElement)) {
-            if (scheduleUpdateTimer) {
-                window.clearInterval(scheduleUpdateTimer);
-            }
-            return;
-        }
-
-        if (scheduleUpdateInProgress) {
-            return;
-        }
-
-        scheduleUpdateInProgress = true;
-        try {
-            const endpoint = fechaInput.dataset.endpoint;
-            const fecha = fechaInput.value;
-
-            const response = await fetch(`${endpoint}?fecha=${fecha}`, {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json',
-                },
-            });
-
-            if (!response.ok) {
-                throw new Error(`Error al actualizar horario (${response.status}).`);
-            }
-
-            const data = await response.json();
-            renderSchedule(data, tiemposPanel, fechaInput);
-        } catch (error) {
-            console.error('Error updating schedule:', error);
-        } finally {
-            scheduleUpdateInProgress = false;
-        }
-    };
-
-    const renderSchedule = (data, tiemposPanel, fechaInput) => {
-        const grid = tiemposPanel.querySelector('.sre-timeline-grid');
-        if (!grid) return;
-
-        const hoy = new Date().toISOString().split('T')[0];
-        const esHoy = fechaInput.value === hoy;
-        const horaActual = new Date().getHours();
-
-        let html = '<span class="sre-timeline-cell sre-timeline-cell--heading" role="columnheader">Dispositivo</span>';
-
-        // Header with hours
-        for (let hora of data.horasTimeline) {
-            const clases = ['sre-timeline-cell', 'sre-timeline-cell--heading'];
-            if (esHoy && hora === horaActual) {
-                clases.push('sre-timeline-cell--now');
-            }
-            html += `<span class="${clases.join(' ')}" role="columnheader">${String(hora).padStart(2, '0')}:00</span>`;
-        }
-
-        // Rows for each device
-        for (let dispositivo of data.dispositivos) {
-            html += `<span class="sre-timeline-cell sre-timeline-cell--device" role="rowheader" title="${dispositivo.nombre}">${dispositivo.nombre}</span>`;
-
-            for (let hora of data.horasTimeline) {
-                const ocupacion = data.ocupaciones[dispositivo.id]?.[hora];
-
-                if (ocupacion) {
-                    html += `<button
-                        class="sre-timeline-cell sre-timeline-cell--${ocupacion.tipo}"
-                        type="button"
-                        role="button"
-                        data-dispositivo-id="${dispositivo.id}"
-                        data-hora="${hora}"
-                        data-fecha="${fechaInput.value}"
-                        title="${ocupacion.etiqueta}"
-                    >${ocupacion.etiqueta.substring(0, 15)}</button>`;
-                } else {
-                    html += `<span class="sre-timeline-cell" role="cell"></span>`;
-                }
-            }
-        }
-
-        grid.innerHTML = html;
-        attachScheduleClickHandlers(fechaInput.value);
-    };
-
-    const attachScheduleClickHandlers = (fecha) => {
-        const tiemposPanel = document.querySelector('#comp-tiempos');
-        const buttons = tiemposPanel.querySelectorAll('[data-dispositivo-id]');
-
-        buttons.forEach(button => {
-            button.addEventListener('click', async (e) => {
-                e.preventDefault();
-                const dispositivoId = button.dataset.dispositivoId;
-                const hora = button.dataset.hora;
-
-                try {
-                    const endpoint = document.querySelector('meta[name="horario-seleccion-endpoint"]')?.content || '/administracion/horario/seleccion';
-                    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-
-                    const response = await fetch(endpoint, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': csrfToken,
-                            'Accept': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            dispositivo_id: parseInt(dispositivoId),
-                            hora: parseInt(hora),
-                            fecha: fecha,
-                        }),
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`Error: ${response.status}`);
-                    }
-
-                    const data = await response.json();
-                    updateSelectionPanel(data.items);
-                } catch (error) {
-                    console.error('Error loading selection:', error);
-                }
-            });
-        });
-    };
-
-    const updateSelectionPanel = (items) => {
-        const seleccionList = document.querySelector('#sre-selection-list-items');
-        if (!seleccionList) return;
-
-        if (!items || items.length === 0) {
-            seleccionList.innerHTML = `
-                <div class="sre-empty-state">
-                    <strong>Sin elementos seleccionados</strong>
-                    <span>Selecciona una franja del horario para ver sus registros.</span>
-                </div>
-            `;
-            return;
-        }
-
-        let html = '';
-        for (let item of items) {
-            const tipoClase = item.tipo.includes('association') ? 'association' : 'reservation';
-            const formattedDate = formatDateTimeWithPeriod(item.inicio);
-
-            html += `
-                <button
-                    type="button"
-                    class="sre-selection-item sre-selection-item--${tipoClase}"
-                    onclick="document.querySelector('input[name=jugador_id]').value = '${item.usuario_id}'; document.querySelector('form[data-search-form]').submit();"
-                    style="cursor: pointer; text-align: left; border: none; background: none; width: 100%; padding: inherit;"
-                >
-                    <h5 class="sre-selection-name">${item.nombre}</h5>
-                    <div class="sre-selection-meta">
-                        <span>${formattedDate}</span>
-                        <span>${item.duracion_min} min</span>
-                        <span>${item.tipo.includes('association') ? 'Asociación' : 'Reserva'}</span>
-                    </div>
-                </button>
-            `;
-        }
-        seleccionList.innerHTML = html;
-    };
-
-    // Listen for changes in the date input
-    const fechaInput = document.querySelector('.sre-fecha-horario-input');
-    if (fechaInput) {
-        fechaInput.addEventListener('change', updateSchedule);
+    const panel = document.querySelector('#comp-tiempos');
+    const selectionList = document.querySelector('#sre-selection-list-items');
+    const dateInput = panel?.querySelector('.sre-fecha-horario-input');
+    const errorMessage = panel?.querySelector('.sre-timeline-error');
+    if (!(panel instanceof HTMLElement) || !(selectionList instanceof HTMLElement)
+        || !(dateInput instanceof HTMLInputElement) || !(errorMessage instanceof HTMLElement)) {
+        return;
     }
 
-    // Initial update and set up periodic refresh
+    let scheduleController;
+    let scheduleDate;
+    let selectionController;
+    let selected = null;
+    let renderedDate = dateInput.value;
+
+    const showError = (message) => {
+        errorMessage.textContent = message;
+        errorMessage.hidden = !message;
+    };
+
+    const clearSelection = () => {
+        selectionController?.abort();
+        selected = null;
+        const empty = document.createElement('div');
+        empty.className = 'sre-empty-state';
+        const title = document.createElement('strong');
+        title.textContent = 'Sin elementos seleccionados';
+        const description = document.createElement('span');
+        description.textContent = 'Selecciona una franja del horario para ver sus registros.';
+        empty.append(title, description);
+        selectionList.replaceChildren(empty);
+    };
+
+    const loadSelection = async () => {
+        if (!selected) return;
+        selectionController?.abort();
+        const controller = new AbortController();
+        selectionController = controller;
+        try {
+            const response = await fetch(panel.dataset.selectionEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': panel.dataset.csrfToken,
+                    Accept: 'application/json',
+                },
+                body: JSON.stringify(selected),
+                signal: controller.signal,
+            });
+            if (!response.ok) throw new Error(`No se pudo cargar la selección (${response.status}).`);
+            const { items } = await response.json();
+            if (controller.signal.aborted) return;
+            selectionList.replaceChildren();
+            if (items.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'sre-empty-state';
+                empty.textContent = 'No hay registros para esta franja.';
+                selectionList.append(empty);
+                showError('');
+                return;
+            }
+            for (const item of items) {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = `sre-selection-item sre-selection-item--${item.tipo}`;
+                const name = document.createElement('h5');
+                name.className = 'sre-selection-name';
+                name.textContent = item.nombre;
+                const meta = document.createElement('div');
+                meta.className = 'sre-selection-meta';
+                for (const text of [formatDateTimeWithPeriod(item.inicio), `${item.duracion_min} min`, item.recurso, item.evento]) {
+                    if (!text) continue;
+                    const span = document.createElement('span');
+                    span.textContent = text;
+                    meta.append(span);
+                }
+                button.append(name, meta);
+                button.addEventListener('click', () => {
+                    const form = document.querySelector('form[data-search-form]');
+                    const input = form?.querySelector('input[name="jugador_id"]');
+                    if (!(form instanceof HTMLFormElement) || !(input instanceof HTMLInputElement)) {
+                        showError('No se encontró el formulario de búsqueda del jugador.');
+                        return;
+                    }
+                    input.value = item.identificacion;
+                    form.requestSubmit();
+                });
+                selectionList.append(button);
+            }
+            showError('');
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                console.error(error);
+                showError('No se pudo cargar la selección. Intenta nuevamente.');
+            }
+        }
+    };
+
+    const updateSchedule = async () => {
+        const date = dateInput.value;
+        if (scheduleController && scheduleDate === date) return;
+        scheduleController?.abort();
+        if (!date) {
+            showError('Selecciona una fecha para consultar el horario.');
+            return;
+        }
+        const controller = new AbortController();
+        scheduleController = controller;
+        scheduleDate = date;
+        try {
+            const url = new URL(dateInput.dataset.endpoint, window.location.href);
+            url.searchParams.set('fecha', date);
+            const response = await fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' },
+                signal: controller.signal,
+            });
+            if (!response.ok) throw new Error(`No se pudo actualizar el horario (${response.status}).`);
+            const data = await response.json();
+            if (controller.signal.aborted || date !== dateInput.value) return;
+            const grid = panel.querySelector('.sre-timeline-grid');
+            const updatedGrid = new DOMParser().parseFromString(data.html, 'text/html').querySelector('.sre-timeline-grid');
+            if (!(grid instanceof HTMLElement) || !(updatedGrid instanceof HTMLElement)) {
+                throw new Error('La respuesta no contiene el horario.');
+            }
+            grid.replaceWith(updatedGrid);
+            renderedDate = date;
+            showError('');
+            if (selected) {
+                const selector = selected.tipo_dispo_id
+                    ? `[data-tipo-dispo-id="${selected.tipo_dispo_id}"][data-franja="${selected.franja}"]`
+                    : `[data-dispositivo-id="${selected.dispositivo_id}"][data-franja="${selected.franja}"]`;
+                if (updatedGrid.querySelector(selector)) {
+                    loadSelection();
+                } else {
+                    clearSelection();
+                }
+            }
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                console.error(error);
+                showError('No se pudo actualizar el horario. Intenta nuevamente.');
+            }
+        } finally {
+            if (scheduleController === controller) {
+                scheduleController = null;
+            }
+        }
+    };
+
+    panel.addEventListener('click', (event) => {
+        const button = event.target.closest('button[data-franja]');
+        if (!(button instanceof HTMLButtonElement)) return;
+        if (renderedDate !== dateInput.value) {
+            showError('El horario de la fecha seleccionada aún no está disponible.');
+            return;
+        }
+        selected = {
+            fecha: dateInput.value,
+            franja: Number(button.dataset.franja),
+            ...(button.dataset.tipoDispoId
+                ? { tipo_dispo_id: Number(button.dataset.tipoDispoId) }
+                : { dispositivo_id: Number(button.dataset.dispositivoId) }),
+        };
+        loadSelection();
+    });
+    dateInput.addEventListener('change', () => {
+        clearSelection();
+        updateSchedule();
+    });
+    document.addEventListener('horario-actualizar', updateSchedule);
     updateSchedule();
-    scheduleUpdateTimer = window.setInterval(updateSchedule, 60000); // Update every minute
+    window.setInterval(updateSchedule, 60000);
 });

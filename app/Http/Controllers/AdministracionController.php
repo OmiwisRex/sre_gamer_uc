@@ -183,7 +183,9 @@ class AdministracionController extends Controller
                 : null,
             'reserva_id' => $reservaIdConversion,
             'fechaSeleccionada' => $fechaSeleccionada,
-            'horasTimeline' => range(0, 23),
+            'dispositivosPorTipo' => $scheduleData['dispositivos']->groupBy('tipo_dispo_id'),
+            'reservasPorTipo' => $scheduleData['reservasPorTipo'],
+            'franjas30' => range(0, 47),
             'ocupaciones' => $scheduleData['ocupaciones'],
             'seleccionItems' => $scheduleData['seleccionItems'],
         ]);
@@ -219,18 +221,16 @@ class AdministracionController extends Controller
 
         $scheduleData = $this->getScheduleData($validated['fecha']);
 
-        $dispositivos = Dispositivo::query()
-            ->with(['tipoDispo:id,nombre', 'estado:id,nombre'])
-            ->whereHas('estado', function (Builder $query): void {
-                $query->where('nombre', 'Activo');
-            })
-            ->orderBy('nombre')
-            ->get(['id', 'nombre', 'tipo_dispo_id', 'estado_id']);
-
         return response()->json([
             'ocupaciones' => $scheduleData['ocupaciones'],
-            'dispositivos' => $dispositivos,
-            'horasTimeline' => range(0, 23),
+            'reservasPorTipo' => $scheduleData['reservasPorTipo'],
+            'html' => view('administracion.comp_tiempos', [
+                'fechaSeleccionada' => $validated['fecha'],
+                'franjas30' => range(0, 47),
+                'dispositivosPorTipo' => $scheduleData['dispositivos']->groupBy('tipo_dispo_id'),
+                'ocupaciones' => $scheduleData['ocupaciones'],
+                'reservasPorTipo' => $scheduleData['reservasPorTipo'],
+            ])->render(),
         ]);
     }
 
@@ -238,61 +238,63 @@ class AdministracionController extends Controller
     {
         $validated = $request->validate([
             'fecha' => ['required', 'date_format:Y-m-d'],
-            'dispositivo_id' => ['required', 'integer'],
-            'hora' => ['required', 'integer', 'min:0', 'max:23'],
+            'dispositivo_id' => ['nullable', 'required_without:tipo_dispo_id', 'prohibits:tipo_dispo_id', 'integer', 'exists:dispositivos,id'],
+            'tipo_dispo_id' => ['nullable', 'required_without:dispositivo_id', 'prohibits:dispositivo_id', 'integer', 'exists:tipo_dispos,id'],
+            'franja' => ['required', 'integer', 'min:0', 'max:47'],
         ]);
 
         $fecha = Carbon::createFromFormat('Y-m-d', $validated['fecha'], config('app.timezone'))->startOfDay();
-        $horaInicio = $fecha->copy()->setHour($validated['hora'])->setMinute(0)->setSecond(0);
-        $horaFin = $horaInicio->copy()->addHour();
-
-        $dispositivo = Dispositivo::query()->find($validated['dispositivo_id']);
-        if (! $dispositivo) {
-            return response()->json(['items' => []]);
-        }
+        $horaInicio = $fecha->copy()->addMinutes($validated['franja'] * 30);
+        $horaFin = $horaInicio->copy()->addMinutes(30);
 
         $items = collect();
 
-        if ($dispositivo->tipoDispo) {
+        if (isset($validated['tipo_dispo_id'])) {
             $reservas = Reserva::query()
-                ->with(['usuario:id,nombres,apellidos', 'tipoDispo:id,nombre', 'evento:id,nombre'])
-                ->where('tipo_dispo_id', $dispositivo->tipo_dispo_id)
-                ->where(function (Builder $query) use ($horaInicio, $horaFin): void {
-                    $query->where('inicio', '<', $horaFin)
-                        ->whereRaw('DATE_ADD(inicio, INTERVAL duracion_min MINUTE) > ?', [$horaInicio]);
+                ->with(['usuario:id,nombres,apellidos,cedula', 'tipoDispo:id,nombre', 'evento:id,nombre'])
+                ->where('tipo_dispo_id', $validated['tipo_dispo_id'])
+                ->whereHas('estado', function (Builder $query): void {
+                    $query->whereIn('nombre', ['Activo', 'Bloqueado']);
                 })
+                ->where('inicio', '<', $horaFin)
                 ->get();
 
             foreach ($reservas as $reserva) {
+                if (Carbon::parse($reserva->inicio, config('app.timezone'))->addMinutes($reserva->duracion_min)->lte($horaInicio)) {
+                    continue;
+                }
                 $items->push([
                     'tipo' => $reserva->evento_id ? 'reservation-event' : 'reservation',
-                    'nombre' => trim($reserva->usuario->nombres . ' ' . $reserva->usuario->apellidos),
+                    'nombre' => trim($reserva->usuario->nombres.' '.$reserva->usuario->apellidos),
                     'inicio' => $reserva->inicio,
                     'duracion_min' => $reserva->duracion_min,
                     'evento' => $reserva->evento?->nombre,
-                    'usuario_id' => $reserva->usuario_id,
+                    'identificacion' => $reserva->usuario->cedula,
+                    'recurso' => $reserva->tipoDispo->nombre,
                 ]);
             }
-        }
+        } else {
+            $asociaciones = Asociacion::query()
+                ->with(['usuario:id,nombres,apellidos,cedula', 'dispositivo:id,nombre', 'evento:id,nombre'])
+                ->where('dispositivo_id', $validated['dispositivo_id'])
+                ->whereHas('estado', function (Builder $query): void {
+                    $query->whereIn('nombre', ['Activo', 'Bloqueado']);
+                })
+                ->where('inicio', '<', $horaFin)
+                ->where('final', '>', $horaInicio)
+                ->get();
 
-        $asociaciones = Asociacion::query()
-            ->with(['usuario:id,nombres,apellidos', 'dispositivo:id,nombre', 'evento:id,nombre'])
-            ->where('dispositivo_id', $dispositivo->id)
-            ->where(function (Builder $query) use ($horaInicio, $horaFin): void {
-                $query->where('inicio', '<', $horaFin)
-                    ->where('final', '>', $horaInicio);
-            })
-            ->get();
-
-        foreach ($asociaciones as $asociacion) {
-            $items->push([
-                'tipo' => $asociacion->evento_id ? 'association-event' : 'association',
-                'nombre' => trim($asociacion->usuario->nombres . ' ' . $asociacion->usuario->apellidos),
-                'inicio' => $asociacion->inicio,
-                'duracion_min' => (int) ((strtotime($asociacion->final) - strtotime($asociacion->inicio)) / 60),
-                'evento' => $asociacion->evento?->nombre,
-                'usuario_id' => $asociacion->usuario_id,
-            ]);
+            foreach ($asociaciones as $asociacion) {
+                $items->push([
+                    'tipo' => $asociacion->evento_id ? 'association-event' : 'association',
+                    'nombre' => trim($asociacion->usuario->nombres.' '.$asociacion->usuario->apellidos),
+                    'inicio' => $asociacion->inicio,
+                    'duracion_min' => (int) ((strtotime($asociacion->final) - strtotime($asociacion->inicio)) / 60),
+                    'evento' => $asociacion->evento?->nombre,
+                    'identificacion' => $asociacion->usuario->cedula,
+                    'recurso' => $asociacion->dispositivo->nombre,
+                ]);
+            }
         }
 
         return response()->json(['items' => $items]);
@@ -484,104 +486,107 @@ class AdministracionController extends Controller
     private function getScheduleData(string $fechaSeleccionada): array
     {
         $fecha = Carbon::createFromFormat('Y-m-d', $fechaSeleccionada, config('app.timezone'))->startOfDay();
-        $fechaFin = $fecha->copy()->endOfDay();
+        $fechaFin = $fecha->copy()->addDay();
 
         $activeDevices = Dispositivo::query()
             ->with(['tipoDispo:id,nombre', 'estado:id,nombre'])
             ->whereHas('estado', function (Builder $query): void {
                 $query->where('nombre', 'Activo');
             })
-            ->orderBy('nombre')
+            ->orderBy('tipo_dispo_id')->orderBy('nombre')
             ->get(['id', 'nombre', 'tipo_dispo_id', 'estado_id']);
 
         $ocupaciones = [];
-        $seleccionItems = collect();
-
-        foreach ($activeDevices as $dispositivo) {
-            $ocupaciones[$dispositivo->id] = [];
-
-            for ($hora = 0; $hora < 24; $hora++) {
-                $ocupaciones[$dispositivo->id][$hora] = null;
-            }
-        }
+        $reservasPorTipo = [];
 
         $asociaciones = Asociacion::query()
-            ->with(['usuario:id,nombres,apellidos', 'dispositivo:id,nombre', 'estado:id,nombre', 'evento:id,nombre'])
             ->whereIn('dispositivo_id', $activeDevices->modelKeys())
-            ->where(function (Builder $query) use ($fecha, $fechaFin): void {
-                $query->whereBetween('inicio', [$fecha, $fechaFin])
-                    ->orWhereBetween('final', [$fecha, $fechaFin])
-                    ->orWhere(function (Builder $q) use ($fecha, $fechaFin): void {
-                        $q->where('inicio', '<', $fecha)->where('final', '>', $fechaFin);
-                    });
+            ->whereHas('estado', function (Builder $query): void {
+                $query->whereIn('nombre', ['Activo', 'Bloqueado']);
             })
+            ->where('inicio', '<', $fechaFin)
+            ->where('final', '>', $fecha)
             ->get();
 
         foreach ($asociaciones as $asociacion) {
             $inicio = Carbon::parse($asociacion->inicio, config('app.timezone'));
             $final = Carbon::parse($asociacion->final, config('app.timezone'));
-
-            for ($hora = 0; $hora < 24; $hora++) {
-                $horaInicio = $fecha->copy()->setHour($hora)->setMinute(0)->setSecond(0);
-                $horaFin = $horaInicio->copy()->addHour();
-
-                if ($inicio->lt($horaFin) && $final->gt($horaInicio)) {
-                    $tipoAsociacion = $asociacion->evento_id ? 'association-event' : 'association';
-                    $ocupaciones[$asociacion->dispositivo_id][$hora] = [
-                        'tipo' => $tipoAsociacion,
-                        'etiqueta' => $asociacion->usuario->nombres ?? 'Usuario',
-                        'id' => $asociacion->id,
-                        'usuarioId' => $asociacion->usuario_id,
-                        'estado' => $asociacion->estado->nombre,
-                    ];
+            for ($franja = 0; $franja < 48; $franja++) {
+                $franjaInicio = $fecha->copy()->addMinutes($franja * 30);
+                if ($inicio->lt($franjaInicio->copy()->addMinutes(30)) && $final->gt($franjaInicio)) {
+                    $celda = &$ocupaciones[$asociacion->dispositivo_id][$franja];
+                    if (! isset($celda)) {
+                        $celda = ['tipo' => 'association', 'cantidad' => 0];
+                    }
+                    $celda['cantidad']++;
+                    if ($asociacion->evento_id !== null) {
+                        $celda['tipo'] = 'association-event';
+                    }
+                    unset($celda);
                 }
             }
         }
 
         $reservas = Reserva::query()
-            ->with(['usuario:id,nombres,apellidos', 'tipoDispo:id,nombre', 'estado:id,nombre', 'evento:id,nombre'])
-            ->where(function (Builder $query) use ($fecha, $fechaFin): void {
-                $query->whereBetween('inicio', [$fecha, $fechaFin])
-                    ->orWhere(function (Builder $q) use ($fecha, $fechaFin): void {
-                        $q->where('inicio', '<', $fechaFin)
-                            ->whereRaw('DATE_ADD(inicio, INTERVAL duracion_min MINUTE) > ?', [$fecha]);
-                    });
+            ->whereIn('tipo_dispo_id', $activeDevices->pluck('tipo_dispo_id')->unique())
+            ->whereHas('estado', function (Builder $query): void {
+                $query->whereIn('nombre', ['Activo', 'Bloqueado']);
             })
+            ->where('inicio', '<', $fechaFin)
             ->get();
 
         foreach ($reservas as $reserva) {
             $inicio = Carbon::parse($reserva->inicio, config('app.timezone'));
             $final = $inicio->copy()->addMinutes($reserva->duracion_min);
+            for ($franja = 0; $franja < 48; $franja++) {
+                $franjaInicio = $fecha->copy()->addMinutes($franja * 30);
+                if ($inicio->lt($franjaInicio->copy()->addMinutes(30)) && $final->gt($franjaInicio)) {
+                    $celda = &$reservasPorTipo[$reserva->tipo_dispo_id][$franja];
+                    if (! isset($celda)) {
+                        $celda = ['tipo' => 'reservation', 'cantidad' => 0];
+                    }
+                    $celda['cantidad']++;
+                    if ($reserva->evento_id !== null) {
+                        $celda['tipo'] = 'reservation-event';
+                    }
+                    unset($celda);
+                }
+            }
+        }
 
-            $tiposDispoIds = $activeDevices
-                ->where('tipo_dispo_id', $reserva->tipo_dispo_id)
-                ->modelKeys();
+        $eventos = Evento::query()
+            ->with('dispositivos:id')
+            ->whereHas('estado', fn (Builder $query) => $query->where('nombre', 'Activo'))
+            ->where('inicio', '<', $fechaFin)
+            ->get();
 
-            foreach ($tiposDispoIds as $dispoId) {
-                for ($hora = 0; $hora < 24; $hora++) {
-                    $horaInicio = $fecha->copy()->setHour($hora)->setMinute(0)->setSecond(0);
-                    $horaFin = $horaInicio->copy()->addHour();
-
-                    if ($inicio->lt($horaFin) && $final->gt($horaInicio)) {
-                        if (! isset($ocupaciones[$dispoId][$hora]) || $ocupaciones[$dispoId][$hora] === null) {
-                            $tipoReserva = $reserva->evento_id ? 'reservation-event' : 'reservation';
-                            $ocupaciones[$dispoId][$hora] = [
-                                'tipo' => $tipoReserva,
-                                'etiqueta' => $reserva->usuario->nombres ?? 'Usuario',
-                                'id' => $reserva->id,
-                                'usuarioId' => $reserva->usuario_id,
-                                'estado' => $reserva->estado->nombre,
-                            ];
+        foreach ($eventos as $evento) {
+            $inicio = Carbon::parse($evento->inicio, config('app.timezone'));
+            $final = $inicio->copy()->addHours($evento->duracion_horas);
+            foreach ($evento->dispositivos as $dispositivo) {
+                if (! $activeDevices->contains('id', $dispositivo->id)) {
+                    continue;
+                }
+                for ($franja = 0; $franja < 48; $franja++) {
+                    $franjaInicio = $fecha->copy()->addMinutes($franja * 30);
+                    if ($inicio->lt($franjaInicio->copy()->addMinutes(30)) && $final->gt($franjaInicio)) {
+                        $celda = &$ocupaciones[$dispositivo->id][$franja];
+                        if (! isset($celda)) {
+                            $celda = ['tipo' => 'event', 'cantidad' => 1];
+                        } elseif ($celda['tipo'] === 'event') {
+                            $celda['cantidad']++;
                         }
+                        unset($celda);
                     }
                 }
             }
         }
 
         return [
+            'dispositivos' => $activeDevices,
             'ocupaciones' => $ocupaciones,
-            'seleccionItems' => $seleccionItems,
+            'reservasPorTipo' => $reservasPorTipo,
+            'seleccionItems' => collect(),
         ];
     }
 }
-
