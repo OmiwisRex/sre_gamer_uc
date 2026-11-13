@@ -21,6 +21,26 @@ document.addEventListener('DOMContentLoaded', () => {
         errorMessage.hidden = !message;
     };
 
+    const SCROLL_POSITION_KEY = 'sre-timeline-scroll-position';
+
+    const saveScrollPosition = () => {
+        const scrollContainer = panel.querySelector('.sre-timeline-scroll');
+        if (scrollContainer instanceof HTMLElement) {
+            localStorage.setItem(SCROLL_POSITION_KEY, scrollContainer.scrollLeft);
+        }
+    };
+
+    const restoreScrollPosition = () => {
+        const scrollContainer = panel.querySelector('.sre-timeline-scroll');
+        if (scrollContainer instanceof HTMLElement) {
+            const savedPosition = localStorage.getItem(SCROLL_POSITION_KEY);
+            if (savedPosition !== null) {
+                const scrollValue = parseInt(savedPosition, 10);
+                scrollContainer.scrollLeft = scrollValue;
+            }
+        }
+    };
+
     const clearSelection = () => {
         selectionController?.abort();
         selected = null;
@@ -126,6 +146,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error('La respuesta no contiene el horario.');
             }
             grid.replaceWith(updatedGrid);
+            
+            restoreScrollPosition();
+            
             renderedDate = date;
             showError('');
             if (selected) {
@@ -166,11 +189,16 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         loadSelection();
     });
+    const scrollContainer = panel.querySelector('.sre-timeline-scroll');
+    if (scrollContainer instanceof HTMLElement) {
+        scrollContainer.addEventListener('scroll', saveScrollPosition);
+    }
     dateInput.addEventListener('change', () => {
         clearSelection();
         updateSchedule();
     });
     document.addEventListener('horario-actualizar', updateSchedule);
     updateSchedule();
+    restoreScrollPosition();
     window.setInterval(updateSchedule, 60000);
 });

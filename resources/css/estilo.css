@@ -528,7 +528,7 @@
 
 .sre-admin-module--schedule {
     grid-area: schedule;
-    height: 32rem;
+    height: 45rem;
 }
 
 .sre-admin-module-heading {
@@ -865,7 +865,9 @@
     min-height: 0;
     flex: 1 1 auto;
     grid-template-columns: minmax(0, 2.25fr) minmax(14rem, 0.85fr);
+    grid-auto-rows: max-content;
     gap: 0.8rem;
+    align-items: start;
 }
 
 .sre-timeline-card,
@@ -875,7 +877,7 @@
     min-width: 0;
     min-height: 0;
     flex-direction: column;
-    overflow: hidden;
+    overflow: visible;
     border: 1px solid #dfe7eb;
     border-radius: 0.65rem;
     background: var(--blanco);
@@ -896,9 +898,8 @@
 }
 
 .sre-timeline-scroll {
-    min-height: 0;
-    flex: 1 1 auto;
-    overflow: auto;
+    overflow-x: auto;
+    overflow-y: hidden;
     padding: 0.65rem;
     position: relative;
 }
@@ -920,6 +921,11 @@
     background: #f7f9fa;
     color: var(--gris-claro);
     font-size: 0.7rem;
+}
+
+button.sre-timeline-cell {
+    font-weight: 700;
+    font-size: 0.82rem;
 }
 
 .sre-timeline-cell--heading {
@@ -1154,7 +1160,7 @@
     }
 
     .sre-admin-module--schedule {
-        height: 55rem;
+        height: 62rem;
     }
 }
 
