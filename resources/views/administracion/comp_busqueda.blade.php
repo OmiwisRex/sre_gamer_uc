@@ -44,9 +44,13 @@
                 @if (isset($jugador) && $jugador)
                     <div class="sre-player-found">
                         <p class="sre-player-found-name">{{ $jugador->nombres }} {{ $jugador->apellidos }}</p>
-                        <span class="sre-hint">{{ $jugador->sesion?->email ?? 'Sin correo' }}</span>
-                        @if (filled($jugador->codigo))
-                            <span class="sre-hint">C.C. {{ $jugador->cedula }} - Código: {{ $jugador->codigo }}</span>
+                        @if ($jugador->rol?->nombre !== 'Invitado')
+                            <span class="sre-hint">{{ $jugador->sesion?->email ?? 'Sin correo' }}</span>
+                            @if (filled($jugador->codigo))
+                                <span class="sre-hint">C.C. {{ $jugador->cedula }} - Código: {{ $jugador->codigo }}</span>
+                            @else
+                                <span class="sre-hint">C.C. {{ $jugador->cedula }}</span>
+                            @endif
                         @else
                             <span class="sre-hint">C.C. {{ $jugador->cedula }}</span>
                         @endif
