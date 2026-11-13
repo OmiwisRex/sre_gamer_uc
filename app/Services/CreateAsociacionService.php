@@ -116,7 +116,7 @@ class CreateAsociacionService
 
                 if ($evento !== null && (bool) $evento->auto_admin) {
                     throw ValidationException::withMessages([
-                        'dispositivo_id' => 'Los eventos auto administrados no permiten asociar un dispositivo concreto.',
+                        'dispositivo_id' => 'Los eventos auto administrados no permiten asociar dispositivos específicos. Los jugadores deben asociarse al evento sin dispositivo.',
                     ]);
                 }
 
@@ -162,9 +162,9 @@ class CreateAsociacionService
                         'dispositivo_id' => 'El dispositivo está bajo la prioridad de otro evento en curso.',
                     ]);
                 }
-            } elseif ($evento === null || ! (bool) $evento->auto_admin) {
+            } elseif ($evento === null || (bool) $evento->auto_admin) {
                 throw ValidationException::withMessages([
-                    'dispositivo_id' => 'Selecciona un dispositivo, o un evento auto administrado sin dispositivo.',
+                    'dispositivo_id' => 'Selecciona un dispositivo específico, o un evento que permita reservas y asociaciones (no auto administrado) sin especificar dispositivo.',
                 ]);
             }
 

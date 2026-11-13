@@ -179,7 +179,7 @@ class UsersIndexTest extends TestCase
         $masterRoleId = $this->createRole('Master');
         $studentRoleId = $this->createRole('Estudiante');
         $genderId = $this->createGender('Indefinido');
-        $this->createUsuario('CC-100001', 'MST-001', 1980, $genderId, $stateId, $masterRoleId);
+        $this->createUsuario('CC-100001', 'USR-001', 1980, $genderId, $stateId, $masterRoleId);
         $studentId = $this->createUsuario('CC-100002', 'EST-001', 2000, $genderId, $stateId, $studentRoleId);
 
         $this->getJson(route('usuarios.search'))

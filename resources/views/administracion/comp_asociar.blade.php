@@ -95,7 +95,7 @@
                                 <option value="">Sin evento</option>
                                 @foreach (($eventos ?? collect()) as $evento)
                                     <option value="{{ $evento->id }}"{{ old('evento_id') == $evento->id ? ' selected' : '' }} title="{{ $evento->nombre }}">
-                                        {{ \Illuminate\Support\Str::limit($evento->nombre, 18) }}{{ $evento->auto_admin ? ' (administrado por organizadores)' : '' }}
+                                        {{ \Illuminate\Support\Str::limit($evento->nombre, 18) }}{{ $evento->auto_admin ? ' (auto administrado)' : '' }}
                                     </option>
                                 @endforeach
                             </select>
@@ -105,7 +105,7 @@
                     <label class="sre-field">
                         <span class="sre-label">Dispositivo</span>
                         <select class="sre-select" name="dispositivo_id">
-                            <option value="">Sin dispositivo (solo evento auto administrado)</option>
+                            <option value="">Sin dispositivo (solo para eventos auto administrados)</option>
                             @foreach (($dispositivos ?? collect()) as $dispositivo)
                                 @php($jugadoresCompartiendo = $asociacionesPorDispositivo->get($dispositivo->id, collect()))
                                 <option value="{{ $dispositivo->id }}"{{ old('dispositivo_id') == $dispositivo->id ? ' selected' : '' }} title="{{ $dispositivo->nombre }}">{{ \Illuminate\Support\Str::limit($dispositivo->nombre, 18) }}{{ $jugadoresCompartiendo->isNotEmpty() ? ' ('.$jugadoresCompartiendo->count().' asociados)' : '' }}</option>

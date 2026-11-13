@@ -20,7 +20,7 @@ return new class extends Migration
             $table->integer('duracion_horas');
             $table->integer('aforo');
             $table->foreignId('estado_id')->constrained('estados')->restrictOnDelete();
-            $table->boolean('auto_admin')->default(true); # false los jugadres reservan
+            $table->boolean('auto_admin')->default(true); // true: auto administrado, false: los jugadores reservan
             $table->timestamps();
         });
     }

@@ -17,7 +17,7 @@ class Evento extends Model
         'duracion_horas',
         'aforo',
         'estado_id',
-        'auto_admin', // false los jugadres reservan
+        'auto_admin', // true: auto administrado, false: los jugadores reservan
     ];
 
     public function usuario(): BelongsTo

@@ -62,7 +62,7 @@ class MasterAdminSeeder extends Seeder
                 'nombres' => $masterAdmin['nombres'],
                 'apellidos' => $masterAdmin['apellidos'],
                 'cedula' => $masterAdmin['cedula'],
-                'codigo' => 'MST-'.Str::upper(Str::random(20)),
+                'codigo' => 'USR-'.Str::upper(Str::random(20)),
                 'year_nace' => 0,
                 'genero_id' => $genderId,
                 'estado_id' => $activeStateId,

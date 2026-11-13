@@ -46,8 +46,14 @@
                         <p class="sre-player-found-name">{{ $jugador->nombres }} {{ $jugador->apellidos }}</p>
                         @if ($jugador->rol?->nombre !== 'Invitado')
                             <span class="sre-hint">{{ $jugador->sesion?->email ?? 'Sin correo' }}</span>
-                            @if (filled($jugador->codigo))
-                                <span class="sre-hint">C.C. {{ $jugador->cedula }} - Código: {{ $jugador->codigo }}</span>
+                            @php
+                                $codigo = $jugador->codigo;
+                                if (!filled($codigo) || str_starts_with($codigo, 'INV-') || str_starts_with($codigo, 'USR-')) {
+                                    $codigo = null;
+                                }
+                            @endphp
+                            @if (filled($codigo))
+                                <span class="sre-hint">C.C. {{ $jugador->cedula }} - Código: {{ $codigo }}</span>
                             @else
                                 <span class="sre-hint">C.C. {{ $jugador->cedula }}</span>
                             @endif

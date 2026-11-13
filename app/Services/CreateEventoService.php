@@ -21,7 +21,7 @@ class CreateEventoService
      *     inicio: string,
      *     duracion_horas: int,
      *     aforo: int,
-     *     auto_admin: bool // false los jugadres reservan
+     *     auto_admin: bool
      * } $attributes
      * @param  array<int, int|string>  $deviceIds
      */

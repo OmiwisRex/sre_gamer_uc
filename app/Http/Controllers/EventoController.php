@@ -56,9 +56,7 @@ class EventoController extends Controller
                     'id' => $evento->id,
                     'nombre' => $evento->nombre,
                     'estado' => $evento->estado?->nombre,
-                    'inicio' => $evento->inicio
-                        ? Carbon::parse($evento->inicio)->format('d/m/Y - h:i A')
-                        : null,
+                    'inicio' => $evento->inicio,
                     'aforo' => $evento->aforo,
                     'edit_url' => url('/eventos/'.$evento->id.'/edit'),
                 ])
@@ -81,13 +79,11 @@ class EventoController extends Controller
                 'nombre' => $evento->nombre,
                 'descripcion' => $evento->descripcion,
                 'organizador' => trim(($evento->usuario?->nombres ?? '').' '.($evento->usuario?->apellidos ?? '')) ?: null,
-                'inicio' => $evento->inicio
-                    ? Carbon::parse($evento->inicio)->format('d/m/Y - h:i A')
-                    : null,
+                'inicio' => $evento->inicio,
                 'duracion' => $evento->duracion_horas.' horas',
                 'aforo' => $evento->aforo.' personas',
                 'estado' => $evento->estado?->nombre,
-                'administracion' => $evento->auto_admin ? 'Auto administrado' : 'Administrado por encargados',
+                'administracion' => $evento->auto_admin ? 'Auto administrado' : 'Los jugadores reservan',
                 'dispositivos' => $evento->dispositivos->pluck('nombre')->all(),
             ],
         ]);

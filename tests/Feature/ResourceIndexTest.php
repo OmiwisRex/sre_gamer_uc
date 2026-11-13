@@ -157,7 +157,7 @@ class ResourceIndexTest extends TestCase
             ->assertJsonPath('data.duracion', '2 horas')
             ->assertJsonPath('data.aforo', '30 personas')
             ->assertJsonPath('data.estado', 'Programado')
-            ->assertJsonPath('data.administracion', 'Auto administrado')
+            ->assertJsonPath('data.administracion', 'Permite reservas y asociaciónes')
             ->assertJsonPath('data.dispositivos.0', 'PC Gamer 01');
     }
 

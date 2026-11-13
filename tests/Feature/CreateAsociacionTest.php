@@ -89,7 +89,7 @@ class CreateAsociacionTest extends TestCase
 
         $this->postAssociation($playerId, null)
             ->assertSessionHasErrors([
-                'dispositivo_id' => 'Selecciona un dispositivo, o un evento auto administrado sin dispositivo.',
+                'dispositivo_id' => 'Selecciona un dispositivo, o un evento que permita asociaciónes y sin dispositivo.',
             ]);
 
         $this->assertDatabaseCount('asociaciones', 0);

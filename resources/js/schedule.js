@@ -1,4 +1,4 @@
-import { formatDateTimeWithPeriod } from './dateFormatter.js';
+import { formatTime } from './dateFormatter.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const panel = document.querySelector('#comp-tiempos');
@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 name.textContent = item.nombre;
                 const meta = document.createElement('div');
                 meta.className = 'sre-selection-meta';
-                for (const text of [formatDateTimeWithPeriod(item.inicio), `${item.duracion_min} min`, item.recurso, item.evento]) {
+                for (const text of [formatTime(item.inicio), '-', `${item.duracion_min} min`, '-', item.recurso, '-', item.evento]) {
                     if (!text) continue;
                     const span = document.createElement('span');
                     span.textContent = text;

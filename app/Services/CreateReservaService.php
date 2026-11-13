@@ -101,7 +101,7 @@ class CreateReservaService
 
                 if ($evento->auto_admin) {
                     throw ValidationException::withMessages([
-                        'evento_id' => 'Este evento es administrado por sus encargados y no admite reservas de jugadores.',
+                        'evento_id' => 'Este evento está auto administrado. Solo los organizadores pueden gestionar las reservas y asociaciones para este evento.',
                     ]);
                 }
 

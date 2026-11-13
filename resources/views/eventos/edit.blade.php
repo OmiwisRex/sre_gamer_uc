@@ -82,7 +82,7 @@
                         <span class="sre-label">Administración del evento</span>
                         <select class="sre-select" name="auto_admin" required>
                             <option value="1" @selected((string) old('auto_admin', $evento->auto_admin) === '1')>Auto administrado</option>
-                            <option value="0" @selected((string) old('auto_admin', $evento->auto_admin) === '0')>Administrado por encargados</option>
+                            <option value="0" @selected((string) old('auto_admin', $evento->auto_admin) === '0')>Los jugadores reservan</option>
                         </select>
                     </label>
                     <label><p class="sre-hint"><br>El estado Bloqueado refiere a un evento programado y válido pero aún invisible para el público o para ser reservado o asociado</p></label>

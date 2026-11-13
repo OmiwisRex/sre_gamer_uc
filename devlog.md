@@ -106,3 +106,11 @@
 - Om, ya funciona la observación del calendario diario de asociaciónes, reservaciónes y eventos.
 - Om, ya funciona la lista de ítems seleccionados en el calendario.
 - Om, creada la relación de colores para el calendario, falta ajustarlos.
+
+13/11/2026 Vi:
+
+- Om, verificada la consistencia del concepto "evento audo administrado".
+- Om, corregidos fallos con el formato de las fechas y horas.
+- Om, corregido problema de consistencia con el concepto "Evento auto administrado".
+- Om, mejorada la presentación del cronograma, color, tipografía, scroll, persistencia.
+- Om, mejorada la presentación de la selección de fichas del cronograma.
