@@ -114,3 +114,5 @@
 - Om, corregido problema de consistencia con el concepto "Evento auto administrado".
 - Om, mejorada la presentación del cronograma, color, tipografía, scroll, persistencia.
 - Om, mejorada la presentación de la selección de fichas del cronograma.
+- Om, ya funciona bien el cronograma de horarios del día.
+- Om, se puede clickear una celda del cronograma para obtener sus ítems y luego verlos.

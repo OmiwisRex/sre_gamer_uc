@@ -3,6 +3,7 @@
     $dispositivosPorTipo = $dispositivosPorTipo ?? collect();
     $reservasPorTipo = $reservasPorTipo ?? [];
     $ocupaciones = $ocupaciones ?? [];
+    $eventosPorDispositivoFranja = $eventosPorDispositivoFranja ?? [];
     $fechaSeleccionada = $fechaSeleccionada ?? now(config('app.timezone'))->toDateString();
     $ahora = now(config('app.timezone'));
     $franjaActual = $fechaSeleccionada === $ahora->toDateString() ? $ahora->hour * 2 + (int) ($ahora->minute >= 30) : null;
@@ -55,10 +56,10 @@
                     <span class="sre-timeline-cell sre-timeline-cell--device" role="rowheader" title="{{ $dispositivo->nombre }}">{{ $dispositivo->nombre }}</span>
                     @foreach ($franjas30 as $franja)
                         @php $celda = $ocupaciones[$dispositivo->id][$franja] ?? null; @endphp
-                        @if ($celda)
+                        @if ($celda && ($celda['tipo'] !== 'event' || $celda['cantidad'] > 0))
                             <button class="sre-timeline-cell sre-timeline-cell--{{ $clases[$celda['tipo']] }} {{ $franja === $franjaActual ? 'sre-timeline-cell--now' : '' }}"
                                 type="button" data-dispositivo-id="{{ $dispositivo->id }}" data-franja="{{ $franja }}"
-                                aria-label="{{ $dispositivo->nombre }}, {{ $celda['cantidad'] }}, franja {{ $franja }}">{{ $celda['cantidad'] }}</button>
+                                aria-label="{{ $dispositivo->nombre }}, {{ $celda['cantidad'] }}, franja {{ $franja }}">{{ $celda['tipo'] === 'event' ? '' : $celda['cantidad'] }}</button>
                         @else
                             <span class="sre-timeline-cell {{ $franja === $franjaActual ? 'sre-timeline-cell--now' : '' }}" role="cell"></span>
                         @endif

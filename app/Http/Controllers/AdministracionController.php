@@ -187,6 +187,7 @@ class AdministracionController extends Controller
             'reservasPorTipo' => $scheduleData['reservasPorTipo'],
             'franjas30' => range(0, 47),
             'ocupaciones' => $scheduleData['ocupaciones'],
+            'eventosPorDispositivoFranja' => $scheduleData['eventosPorDispositivoFranja'],
             'seleccionItems' => $scheduleData['seleccionItems'],
         ]);
     }
@@ -224,12 +225,14 @@ class AdministracionController extends Controller
         return response()->json([
             'ocupaciones' => $scheduleData['ocupaciones'],
             'reservasPorTipo' => $scheduleData['reservasPorTipo'],
+            'eventosPorDispositivoFranja' => $scheduleData['eventosPorDispositivoFranja'],
             'html' => view('administracion.comp_tiempos', [
                 'fechaSeleccionada' => $validated['fecha'],
                 'franjas30' => range(0, 47),
                 'dispositivosPorTipo' => $scheduleData['dispositivos']->groupBy('tipo_dispo_id'),
                 'ocupaciones' => $scheduleData['ocupaciones'],
                 'reservasPorTipo' => $scheduleData['reservasPorTipo'],
+                'eventosPorDispositivoFranja' => $scheduleData['eventosPorDispositivoFranja'],
             ])->render(),
         ]);
     }
@@ -294,6 +297,30 @@ class AdministracionController extends Controller
                     'identificacion' => $asociacion->usuario->cedula,
                     'recurso' => $asociacion->dispositivo->nombre,
                 ]);
+            }
+
+            $eventos = Evento::query()
+                ->with('dispositivos:id')
+                ->whereHas('estado', fn (Builder $query) => $query->where('nombre', 'Activo'))
+                ->whereHas('dispositivos', fn (Builder $query) => $query->where('dispositivos.id', $validated['dispositivo_id']))
+                ->where('inicio', '<', $horaFin->toDateTimeString())
+                ->get();
+
+            foreach ($eventos as $evento) {
+                $eventoInicio = Carbon::parse($evento->inicio, config('app.timezone'));
+                $eventoFin = $eventoInicio->copy()->addHours($evento->duracion_horas);
+
+                if ($eventoInicio->lt($horaFin) && $eventoFin->gt($horaInicio)) {
+                    $dispositivos = $evento->dispositivos->pluck('nombre')->implode(', ');
+                    $items->push([
+                        'tipo' => 'event',
+                        'nombre' => $evento->nombre,
+                        'inicio' => $evento->inicio,
+                        'duracion_horas' => $evento->duracion_horas,
+                        'auto_admin' => $evento->auto_admin,
+                        'recurso' => $dispositivos,
+                    ]);
+                }
             }
         }
 
@@ -498,6 +525,7 @@ class AdministracionController extends Controller
 
         $ocupaciones = [];
         $reservasPorTipo = [];
+        $eventosPorDispositivoFranja = [];
 
         $asociaciones = Asociacion::query()
             ->whereIn('dispositivo_id', $activeDevices->modelKeys())
@@ -572,9 +600,19 @@ class AdministracionController extends Controller
                     if ($inicio->lt($franjaInicio->copy()->addMinutes(30)) && $final->gt($franjaInicio)) {
                         $celda = &$ocupaciones[$dispositivo->id][$franja];
                         if (! isset($celda)) {
-                            $celda = ['tipo' => 'event', 'cantidad' => 1];
-                        } elseif ($celda['tipo'] === 'event') {
-                            $celda['cantidad']++;
+                            $celda = ['tipo' => 'event', 'cantidad' => 0];
+                        }
+                        if ($celda['tipo'] === 'event') {
+                            if (! isset($eventosPorDispositivoFranja[$dispositivo->id][$franja])) {
+                                $eventosPorDispositivoFranja[$dispositivo->id][$franja] = [];
+                            }
+                            $eventosPorDispositivoFranja[$dispositivo->id][$franja][] = [
+                                'id' => $evento->id,
+                                'nombre' => $evento->nombre,
+                                'inicio' => $evento->inicio,
+                                'duracion_horas' => $evento->duracion_horas,
+                                'auto_admin' => $evento->auto_admin,
+                            ];
                         }
                         unset($celda);
                     }
@@ -586,6 +624,7 @@ class AdministracionController extends Controller
             'dispositivos' => $activeDevices,
             'ocupaciones' => $ocupaciones,
             'reservasPorTipo' => $reservasPorTipo,
+            'eventosPorDispositivoFranja' => $eventosPorDispositivoFranja,
             'seleccionItems' => collect(),
         ];
     }

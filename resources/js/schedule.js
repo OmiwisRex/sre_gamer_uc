@@ -88,26 +88,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 button.className = `sre-selection-item sre-selection-item--${item.tipo}`;
                 const name = document.createElement('h5');
                 name.className = 'sre-selection-name';
-                name.textContent = item.nombre;
+                if (item.tipo === 'event') {
+                    name.textContent = '< ' + item.nombre + ' >';
+                } else {
+                    name.textContent = item.nombre;
+                }
                 const meta = document.createElement('div');
                 meta.className = 'sre-selection-meta';
-                for (const text of [formatTime(item.inicio), '-', `${item.duracion_min} min`, '-', item.recurso, '-', item.evento]) {
-                    if (!text) continue;
-                    const span = document.createElement('span');
-                    span.textContent = text;
-                    meta.append(span);
-                }
-                button.append(name, meta);
-                button.addEventListener('click', () => {
-                    const form = document.querySelector('form[data-search-form]');
-                    const input = form?.querySelector('input[name="jugador_id"]');
-                    if (!(form instanceof HTMLFormElement) || !(input instanceof HTMLInputElement)) {
-                        showError('No se encontró el formulario de búsqueda del jugador.');
-                        return;
+                
+                if (item.tipo === 'event') {
+                    const eventoInicio = new Date(item.inicio);
+                    const horaInicio = formatTime(item.inicio);
+                    const horaFinal = new Date(eventoInicio.getTime() + item.duracion_horas * 3600 * 1000);
+                    const horaFinalStr = formatTime(horaFinal);
+                    const tipoEvento = item.auto_admin ? 'Auto' : 'Reservas';
+                    for (const text of [horaInicio, '-', horaFinalStr, '-', tipoEvento, '-', item.recurso]) {
+                        if (!text) continue;
+                        const span = document.createElement('span');
+                        span.textContent = text;
+                        meta.append(span);
                     }
-                    input.value = item.identificacion;
-                    form.requestSubmit();
-                });
+                } else {
+                    for (const text of [formatTime(item.inicio), '-', `${item.duracion_min} min`, '-', item.recurso, '-', item.evento]) {
+                        if (!text) continue;
+                        const span = document.createElement('span');
+                        span.textContent = text;
+                        meta.append(span);
+                    }
+                }
+                
+                button.append(name, meta);
+                
+                if (item.tipo !== 'event') {
+                    button.addEventListener('click', () => {
+                        const form = document.querySelector('form[data-search-form]');
+                        const input = form?.querySelector('input[name="jugador_id"]');
+                        if (!(form instanceof HTMLFormElement) || !(input instanceof HTMLInputElement)) {
+                            showError('No se encontró el formulario de búsqueda del jugador.');
+                            return;
+                        }
+                        input.value = item.identificacion;
+                        form.requestSubmit();
+                    });
+                }
                 selectionList.append(button);
             }
             showError('');
@@ -197,7 +220,6 @@ document.addEventListener('DOMContentLoaded', () => {
         clearSelection();
         updateSchedule();
     });
-    document.addEventListener('horario-actualizar', updateSchedule);
     updateSchedule();
     restoreScrollPosition();
     window.setInterval(updateSchedule, 60000);
