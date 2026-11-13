@@ -116,3 +116,4 @@
 - Om, mejorada la presentación de la selección de fichas del cronograma.
 - Om, ya funciona bien el cronograma de horarios del día.
 - Om, se puede clickear una celda del cronograma para obtener sus ítems y luego verlos.
+- Om, corregido fallo, ahora selección de cronograma muestra eventos también.

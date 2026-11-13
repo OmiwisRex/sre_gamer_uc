@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const horaFinal = new Date(eventoInicio.getTime() + item.duracion_horas * 3600 * 1000);
                     const horaFinalStr = formatTime(horaFinal);
                     const tipoEvento = item.auto_admin ? 'Auto' : 'Reservas';
-                    for (const text of [horaInicio, '-', horaFinalStr, '-', tipoEvento, '-', item.recurso]) {
+                    for (const text of [horaInicio, '-', horaFinalStr, '-', tipoEvento]) {
                         if (!text) continue;
                         const span = document.createElement('span');
                         span.textContent = text;

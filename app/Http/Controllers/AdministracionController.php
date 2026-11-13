@@ -308,7 +308,7 @@ class AdministracionController extends Controller
 
             foreach ($eventos as $evento) {
                 $eventoInicio = Carbon::parse($evento->inicio, config('app.timezone'));
-                $eventoFin = $eventoInicio->copy()->addHours($evento->duracion_horas);
+                $eventoFin = $eventoInicio->copy()->addHours((float) $evento->duracion_horas);
 
                 if ($eventoInicio->lt($horaFin) && $eventoFin->gt($horaInicio)) {
                     $dispositivos = $evento->dispositivos->pluck('nombre')->implode(', ');
@@ -590,7 +590,7 @@ class AdministracionController extends Controller
 
         foreach ($eventos as $evento) {
             $inicio = Carbon::parse($evento->inicio, config('app.timezone'));
-            $final = $inicio->copy()->addHours($evento->duracion_horas);
+            $final = $inicio->copy()->addHours((float) $evento->duracion_horas);
             foreach ($evento->dispositivos as $dispositivo) {
                 if (! $activeDevices->contains('id', $dispositivo->id)) {
                     continue;
@@ -598,21 +598,21 @@ class AdministracionController extends Controller
                 for ($franja = 0; $franja < 48; $franja++) {
                     $franjaInicio = $fecha->copy()->addMinutes($franja * 30);
                     if ($inicio->lt($franjaInicio->copy()->addMinutes(30)) && $final->gt($franjaInicio)) {
+                        if (! isset($eventosPorDispositivoFranja[$dispositivo->id][$franja])) {
+                            $eventosPorDispositivoFranja[$dispositivo->id][$franja] = [];
+                        }
+                        $eventosPorDispositivoFranja[$dispositivo->id][$franja][] = [
+                            'id' => $evento->id,
+                            'nombre' => $evento->nombre,
+                            'inicio' => $evento->inicio,
+                            'duracion_horas' => $evento->duracion_horas,
+                            'auto_admin' => $evento->auto_admin,
+                        ];
                         $celda = &$ocupaciones[$dispositivo->id][$franja];
                         if (! isset($celda)) {
                             $celda = ['tipo' => 'event', 'cantidad' => 0];
-                        }
-                        if ($celda['tipo'] === 'event') {
-                            if (! isset($eventosPorDispositivoFranja[$dispositivo->id][$franja])) {
-                                $eventosPorDispositivoFranja[$dispositivo->id][$franja] = [];
-                            }
-                            $eventosPorDispositivoFranja[$dispositivo->id][$franja][] = [
-                                'id' => $evento->id,
-                                'nombre' => $evento->nombre,
-                                'inicio' => $evento->inicio,
-                                'duracion_horas' => $evento->duracion_horas,
-                                'auto_admin' => $evento->auto_admin,
-                            ];
+                        } elseif ($celda['tipo'] === 'association') {
+                            $celda['tipo'] = 'association-event';
                         }
                         unset($celda);
                     }
