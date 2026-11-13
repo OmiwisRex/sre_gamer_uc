@@ -495,10 +495,10 @@
 
 .sre-admin-dashboard {
     display: grid;
-    min-height: 48rem;
+    min-height: auto;
     flex: 1 0 auto;
     grid-template-columns: minmax(0, 2.1fr) minmax(16rem, 1fr);
-    grid-template-rows: minmax(29rem, 1.15fr) minmax(32rem, 0.85fr);
+    grid-template-rows: auto auto;
     grid-template-areas:
         "player alerts"
         "schedule schedule";
@@ -528,7 +528,7 @@
 
 .sre-admin-module--schedule {
     grid-area: schedule;
-    height: 45rem;
+    height: auto;
 }
 
 .sre-admin-module-heading {
@@ -865,14 +865,25 @@
     min-height: 0;
     flex: 1 1 auto;
     grid-template-columns: minmax(0, 2.25fr) minmax(14rem, 0.85fr);
-    grid-auto-rows: max-content;
+    grid-auto-rows: 1fr;
     gap: 0.8rem;
-    align-items: start;
+    align-items: stretch;
 }
 
 .sre-timeline-card,
 .sre-selection-card,
 .sre-alert-card {
+    display: flex;
+    min-width: 0;
+    min-height: 0;
+    flex-direction: column;
+    overflow: visible;
+    border: 1px solid #dfe7eb;
+    border-radius: 0.65rem;
+    background: var(--blanco);
+}
+
+.sre-selection-card {
     display: flex;
     min-width: 0;
     min-height: 0;
@@ -1111,7 +1122,7 @@ button.sre-timeline-cell {
 @media (max-width: 1100px) {
     .sre-admin-dashboard {
         grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: minmax(35rem, auto) minmax(20rem, auto) minmax(32rem, auto);
+        grid-template-rows: auto auto auto;
         grid-template-areas:
             "player"
             "alerts"
